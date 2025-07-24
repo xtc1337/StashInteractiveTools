@@ -9,21 +9,33 @@ import { patch } from './api';
 interface SceneFileInfoPanelProps {
   scene: SceneDataFragment;
 }
+function enableInteractiveTools(scene: SceneDataFragment) {
+  return scene.interactive;
+}
 
-patch.after('ScenePage.Tabs', (props: PropsWithChildren) => {
-  return (
-    <>
-      {props.children}
-      <Nav.Item>
-        <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
-      </Nav.Item>
-    </>
-  );
-});
+patch.after(
+  'ScenePage.Tabs',
+  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
+    if (!enableInteractiveTools(props.scene)) {
+      return props.children;
+    }
+    return (
+      <>
+        {props.children}
+        <Nav.Item>
+          <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
+        </Nav.Item>
+      </>
+    );
+  },
+);
 
 patch.after(
   'ScenePage.TabContent',
   (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
+    if (!props.scene.interactive) {
+      return props.children;
+    }
     return (
       <>
         {props.children}

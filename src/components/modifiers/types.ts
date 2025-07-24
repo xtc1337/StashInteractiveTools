@@ -1,4 +1,5 @@
 import { Funscript } from 'funscript-utils/lib/types';
+import { MODIFIERS } from './index';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Any = any;
@@ -187,6 +188,18 @@ export function toValues<T extends AnyModifierDef = AnyModifierDef>(
     }),
     {} as Record<string, PossibleValues>,
   ) as Values;
+}
+
+export function presetToModifierDef(preset: ModifierPreset) {
+  return preset.modifiers.map((saved) => {
+    const modifier = MODIFIERS.find(
+      (m) => m.id === saved.id,
+    ) as unknown as AnyModifierDef;
+    modifier.options.forEach((option: ModifierOption) => {
+      option.value = saved.values[option.name] ?? option.defaultValue;
+    });
+    return modifier;
+  });
 }
 export function withOrWithout(value: boolean, text: string) {
   return `${text} : ${value ? '✓' : '✘'} `;

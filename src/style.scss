@@ -95,3 +95,11 @@
     vertical-align: 0.125em;
   }
 }
+.stash-interactive-tools-modify {
+  #remove-modifier-preset {
+    padding: 0.375rem 0.35rem;
+    svg {
+      color: var(--danger);
+    }
+  }
+}

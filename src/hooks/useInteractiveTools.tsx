@@ -5,7 +5,6 @@ import {
 } from '../generated-graphql';
 import { useApolloClient } from '@apollo/client';
 import React, {
-  Dispatch,
   useCallback,
   useEffect,
   useMemo,
@@ -75,7 +74,8 @@ export type InteractiveContext = {
   onChange: (script: string) => Promise<void>;
   db: IndexedDBWrapper<DBSchema>;
   preset: ModifierPreset | null;
-  setPreset: Dispatch<React.SetStateAction<ModifierPreset | null>>;
+  presets: ModifierPreset[];
+  setPreset: (preset: ModifierPreset | null, toDelete?: boolean) => void;
   addPipeline<T extends ScriptPipeline>(
     pipeline: T,
     update: true,
@@ -130,6 +130,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [entries, setEntries] = useState<Script[]>([]);
 
   const unmodifiedScript = useRef<Funscript>();
+  const [presets, updatePresets] = useState<ModifierPreset[]>([]);
   const [preset, setPreset] = useState<ModifierPreset | null>(null);
 
   const [currentPaths, setCurrentPaths] = useState<ScenePaths>({
@@ -272,7 +273,33 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   }, [findScripts, id]);
   useEffect(() => {
     setEntries(data?.runPluginOperation?.scripts ?? []);
+    DB.getAll('presets').then((records) => {
+      updatePresets(records);
+    });
   }, [data]);
+  const savePresetInternal = useCallback(
+    (p: ModifierPreset | null, toDelete = false) => {
+      setPreset(toDelete ? null : p);
+      if (p) {
+        updatePresets((v) => {
+          const presetIndex = v.findIndex((p) => p.id === p.id);
+          if (toDelete) {
+            if (presetIndex !== -1) {
+              v.splice(presetIndex, 1);
+            }
+            return [...v];
+          } else if (presetIndex !== -1) {
+            v[presetIndex] = p;
+          } else {
+            v.push(p);
+          }
+
+          return [...v];
+        });
+      }
+    },
+    [setPreset, updatePresets],
+  );
 
   const contextValue = useMemo(
     () => ({
@@ -286,7 +313,8 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       pipelines,
       removePipeline,
       preset,
-      setPreset,
+      presets,
+      setPreset: savePresetInternal,
 
       getPipeline,
       updateScript,
@@ -305,6 +333,8 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       updateScript,
       preset,
       updateModifiers,
+      savePresetInternal,
+      presets,
     ],
   );
   return (
