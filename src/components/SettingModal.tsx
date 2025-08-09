@@ -8,7 +8,7 @@ export interface ISettingModal<T> {
   subHeadingID?: string;
   subHeading?: React.ReactNode;
   value: T | undefined;
-  close: (v?: T) => void;
+  close: (confirm: boolean, v?: T) => void;
   renderField: (
     value: T | undefined,
     setValue: (v?: T) => void,
@@ -36,10 +36,10 @@ export const SettingModal = <T,>(props: ISettingModal<T>) => {
   const [currentValue, setCurrentValue] = useState<T | undefined>(value);
 
   return (
-    <Modal show onHide={() => close()} id="setting-dialog" {...modalProps}>
+    <Modal show onHide={() => close(false)} id="setting-dialog" {...modalProps}>
       <Form
         onSubmit={(e) => {
-          close(currentValue);
+          close(true, currentValue);
           e.preventDefault();
         }}
       >
@@ -60,13 +60,12 @@ export const SettingModal = <T,>(props: ISettingModal<T>) => {
           ) : undefined}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => close()}>
+          <Button variant="secondary" onClick={() => close(false)}>
             <FormattedMessage id="actions.cancel" />
           </Button>
           <Button
             type="submit"
             variant="primary"
-            onClick={() => close(currentValue)}
             disabled={
               currentValue === undefined ||
               (validate && !validate(currentValue))

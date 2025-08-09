@@ -12,6 +12,7 @@ import {
   MODIFIERS,
   presetToModifierDef,
 } from './modifiers';
+
 import React, { ChangeEventHandler, useCallback, useState } from 'react';
 import { ModifierEditor } from './ModifierEditor';
 import { ActiveModifiers } from './modifiers/block';
@@ -94,10 +95,17 @@ export const ModifyScript = () => {
       if (preset) {
         setPreset(preset, toDelete);
         if (!toDelete) {
-          onUpdateModifiers(presetToModifierDef(preset));
+          onUpdateModifiers(
+            presetToModifierDef(
+              preset,
+              MODIFIERS as unknown as AnyModifierDef[],
+            ),
+          );
         }
       }
-      setManagePresets(false);
+      if (!toDelete) {
+        setManagePresets(false);
+      }
     },
     [setPreset, onUpdateModifiers, setManagePresets],
   );

@@ -278,24 +278,39 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     });
   }, [data]);
   const savePresetInternal = useCallback(
-    (p: ModifierPreset | null, toDelete = false) => {
-      setPreset(toDelete ? null : p);
-      if (p) {
-        updatePresets((v) => {
-          const presetIndex = v.findIndex((p) => p.id === p.id);
-          if (toDelete) {
-            if (presetIndex !== -1) {
-              v.splice(presetIndex, 1);
+    (updatedPreset: ModifierPreset | null, toDelete = false) => {
+      setPreset(toDelete ? null : updatedPreset);
+      if (updatedPreset) {
+        const commitChanges = () => {
+          updatePresets((savedPresets) => {
+            const presetIndex = savedPresets.findIndex(
+              (p) => p.id === updatedPreset.id,
+            );
+            console.log(
+              'savePresetInternal',
+              updatedPreset,
+              presetIndex,
+              savedPresets,
+            );
+            if (toDelete) {
+              if (presetIndex !== -1) {
+                savedPresets.splice(presetIndex, 1);
+              }
+              return [...savedPresets];
+            } else if (presetIndex !== -1) {
+              savedPresets[presetIndex] = updatedPreset;
+            } else {
+              savedPresets.push(updatedPreset);
             }
-            return [...v];
-          } else if (presetIndex !== -1) {
-            v[presetIndex] = p;
-          } else {
-            v.push(p);
-          }
 
-          return [...v];
-        });
+            return [...savedPresets];
+          });
+        };
+        if (toDelete && updatedPreset.id) {
+          DB.delete('presets', updatedPreset.id).then(commitChanges);
+        } else {
+          commitChanges();
+        }
       }
     },
     [setPreset, updatePresets],

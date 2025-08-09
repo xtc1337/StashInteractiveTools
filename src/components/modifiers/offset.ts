@@ -1,5 +1,5 @@
 import { FunTweaker } from 'funscript-utils';
-import { createModifierDef, createOptions } from './types';
+import { createModifierDef, createOptions } from './utils';
 
 const options = createOptions([
   {

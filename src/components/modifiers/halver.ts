@@ -1,5 +1,5 @@
-import { createModifierDef, createOptions, withOrWithout } from './types';
 import { FunHalver } from 'funscript-utils';
+import { createModifierDef, createOptions, withOrWithout } from './utils';
 
 const options = createOptions([
   {

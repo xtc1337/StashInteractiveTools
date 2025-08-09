@@ -27,6 +27,9 @@ export const ManagePresetsDialog = ({
       show
       icon={faBookmark}
       header={'Manage Presets'}
+      accept={{
+        onClick: () => onClose(),
+      }}
       cancel={{
         onClick: () => onClose(),
         text: intl.formatMessage({ id: 'actions.cancel' }),

@@ -1,9 +1,4 @@
-import {
-  AnyModifierDef,
-  ModifierPreset,
-  PossibleValues,
-  toValues,
-} from './types';
+import { AnyModifierDef, ModifierPreset, PossibleValues } from './types';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Button,
@@ -24,8 +19,12 @@ import {
   faTrash,
 } from '@fortawesome/free-solid-svg-icons';
 import { DeleteModifierDialog } from '../DeleteModifierDialog';
-import { SaveModifierPresetDialog } from '../SaveModifierPresetDialog';
+import {
+  SaveModifierPresetDialog,
+  SaveModifierPresetDialogProps,
+} from '../SaveModifierPresetDialog';
 import { useInteractiveTools } from '../../hooks';
+import { toValues } from './utils';
 
 const { Icon } = components;
 const { useToast } = hooks;
@@ -176,23 +175,29 @@ export const ActiveModifiers = ({
     [onEdit, modifiers],
   );
   const [saving, setSaving] = useState(false);
-  const onSavePreset = useCallback(
-    async (presetName: string) => {
+  const onSavePreset: SaveModifierPresetDialogProps['onClose'] = useCallback(
+    async (params) => {
+      if (!params) {
+        setSaving(false);
+        return;
+      }
+      const { name, copy } = params;
       const record: ModifierPreset = {
-        name: presetName,
+        name,
         modifiers: modifiers.map((m) => ({
           id: m.id,
           values: toValues(m) as Record<string, PossibleValues>,
         })),
       };
-      if (preset?.id) {
+      if (!copy && preset?.id) {
         record.id = preset.id;
       }
 
       try {
         record.id = await db.put('presets', record);
+        console.log('Saved preset', record);
         setPreset(record);
-        success(`Saved preset ${presetName} successfully!`);
+        success(`Saved preset ${name} successfully!`);
       } catch (e) {
         error('Error saving preset: ' + e);
       }
@@ -203,7 +208,9 @@ export const ActiveModifiers = ({
 
   return (
     <>
-      {saving ? <SaveModifierPresetDialog onClose={onSavePreset} /> : null}
+      {saving ? (
+        <SaveModifierPresetDialog onClose={onSavePreset} value={preset?.name} />
+      ) : null}
       <div className="stash-interactive-tools-modifiers">
         {modifiers.map((modification, i) => (
           <ModifierBlock

@@ -1,6 +1,6 @@
-import { createModifierDef, createOptions } from './types';
 import { Funscript } from 'funscript-utils/lib/types';
 import { createDebugConsole } from '../../utils';
+import { createModifierDef, createOptions } from './utils';
 
 const logger = createDebugConsole('modify.custom');
 // https://github.com/defucilis/funscript-io-2/blob/a514ea741e019e599b3ba52a22537199237c9ebd/lib/funscript-utils/funTweaker.ts#L237

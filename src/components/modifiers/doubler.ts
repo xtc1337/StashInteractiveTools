@@ -1,7 +1,7 @@
-import { createModifierDef, createOptions, withOrWithout } from './types';
 import { FunUtils } from 'funscript-utils';
 import { Action } from 'funscript-utils/src/types';
 import { Funscript } from 'funscript-utils/lib/types';
+import { createModifierDef, createOptions, withOrWithout } from './utils';
 
 const { getActionGroups, roundAction } = FunUtils;
 

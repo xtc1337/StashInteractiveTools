@@ -1,5 +1,5 @@
-import { createModifierDef, createOptions } from './types';
 import { Action, Funscript } from 'funscript-utils/lib/types';
+import { createModifierDef, createOptions } from './utils';
 
 // https://github.com/defucilis/funscript-io-2/blob/a514ea741e019e599b3ba52a22537199237c9ebd/lib/funscript-utils/funTweaker.ts#L237
 export const getRandomizedScript = (

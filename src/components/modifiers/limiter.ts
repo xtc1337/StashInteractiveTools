@@ -1,5 +1,6 @@
 import { FunTweaker } from 'funscript-utils';
-import { createModifierDef, createOptions, dropdown, input } from './types';
+
+import { createModifierDef, createOptions, dropdown, input } from './utils';
 
 const options = createOptions([
   dropdown('devicePreset', 'handy', 'Device Mode', [

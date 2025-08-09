@@ -9,8 +9,8 @@ import {
   OptionValueType,
   PossibleValues,
   ToggleOption,
-  toValues,
 } from './modifiers';
+import { toValues } from './modifiers';
 
 type OptionChanged<T extends PossibleValues = PossibleValues> = (
   option: ModifierOption,

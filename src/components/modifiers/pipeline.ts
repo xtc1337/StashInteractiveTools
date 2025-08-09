@@ -1,6 +1,7 @@
 import { ScriptPipe, ScriptPipeline } from '../../hooks';
-import { AnyModifierDef, toValues } from './types';
+import { AnyModifierDef } from './types';
 import { asyncReduce } from '../../utils';
+import { toValues } from './utils';
 
 export const MODIFICATION_PIPELINE_ID = 'modification-pipeline';
 export class ModificationPipeline implements ScriptPipeline {

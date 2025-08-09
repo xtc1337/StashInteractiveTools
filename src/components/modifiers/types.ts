@@ -1,5 +1,4 @@
 import { Funscript } from 'funscript-utils/lib/types';
-import { MODIFIERS } from './index';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Any = any;
@@ -58,47 +57,6 @@ export type ModifierOption =
   | ToggleOption<string>
   | DropdownOption<string, OptionValueType>;
 
-// === DSL Helpers ===
-
-export function input<Name extends string, Value extends OptionValueType>(
-  name: Name,
-  defaultValue: Value,
-  title: string,
-  opts?: Partial<Pick<InputOption<Name, Value>, 'value' | 'enabled'>>,
-): InputOption<Name, Value> {
-  return { name, defaultValue, title, type: 'input', ...opts };
-}
-
-export function toggle<Name extends string>(
-  name: Name,
-  defaultValue: boolean,
-  title: string,
-  opts?: Partial<Pick<ToggleOption<Name>, 'value' | 'enabled'>>,
-): ToggleOption<Name> {
-  return { name, defaultValue, title, type: 'toggle', ...opts };
-}
-
-export function dropdown<
-  Name extends string,
-  Value extends string | number,
-  const Options extends readonly DropdownChoice<OptionValueType>[],
->(
-  name: Name,
-  defaultValue: Value,
-  title: string,
-  options: Options,
-  opts?: Partial<Pick<DropdownOption<Name, Value>, 'value' | 'enabled'>>,
-): DropdownOption<Name, Options[number]['value']> {
-  return {
-    name,
-    defaultValue,
-    title,
-    type: 'dropdown',
-    options,
-    ...opts,
-  };
-}
-
 // === Grouping / Collection ===
 
 export type ModifierGroup = {
@@ -108,19 +66,6 @@ export type ModifierGroup = {
 };
 
 export type ModifierEntry = ModifierOption; //| ModifierGroup;
-
-export function group(
-  title: string,
-  options: readonly ModifierOption[],
-): ModifierGroup {
-  return { type: 'group', title, options };
-}
-
-export function createOptions<const Entries extends readonly ModifierEntry[]>(
-  entries: Entries,
-): Entries {
-  return entries;
-}
 
 // 🧠 Context Inference
 
@@ -165,45 +110,11 @@ export type ModifierDef<Entries extends readonly ModifierEntry[]> = {
   ) => Funscript | Promise<Funscript>;
 };
 
-export function createModifierDef<
-  const Entries extends readonly ModifierEntry[],
->(def: ModifierDef<Entries>): ModifierDef<Entries> {
-  return def;
-}
-
 export type AnyModifierDef = ModifierDef<readonly ModifierEntry[]>;
 export type AnyModifierContext = ModifierContext<ModifierOption[]>;
 export type PossibleValues = string | number | boolean;
 
-export function toValues<T extends AnyModifierDef = AnyModifierDef>(
-  modifier: T,
-) {
-  type Values = ModifierContext<T['options']> & {
-    [key: string]: PossibleValues;
-  };
-  return modifier.options.reduce(
-    (acc, option) => ({
-      ...acc,
-      [option.name]: option.value ?? option.defaultValue,
-    }),
-    {} as Record<string, PossibleValues>,
-  ) as Values;
-}
-
-export function presetToModifierDef(preset: ModifierPreset) {
-  return preset.modifiers.map((saved) => {
-    const modifier = MODIFIERS.find(
-      (m) => m.id === saved.id,
-    ) as unknown as AnyModifierDef;
-    modifier.options.forEach((option: ModifierOption) => {
-      option.value = saved.values[option.name] ?? option.defaultValue;
-    });
-    return modifier;
-  });
-}
-export function withOrWithout(value: boolean, text: string) {
-  return `${text} : ${value ? '✓' : '✘'} `;
-}
+// === DSL Helpers ===
 
 export type ModifierPreset = {
   id?: number;
