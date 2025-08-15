@@ -1,4 +1,5 @@
 import React from 'react';
+import { SceneDataFragment } from '../generated-graphql';
 
 export const DEFAULT_NAMESPACE = 'StashInteractiveTools';
 export function createDebugConsole(namespace = '') {
@@ -79,4 +80,11 @@ export function findComponentByPath(
   }
 
   return current;
+}
+
+export function isIvdbScene(scene: SceneDataFragment) {
+  return scene.urls.some((u) => u.includes('ivdb.io/#/videos/'));
+}
+export function enableInteractiveTools(scene: SceneDataFragment) {
+  return scene.interactive || isIvdbScene(scene);
 }

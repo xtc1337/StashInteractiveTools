@@ -5,12 +5,10 @@ import React, { PropsWithChildren } from 'react';
 import { InteractiveToolsTab } from './components';
 import { Nav, Tab } from 'react-bootstrap';
 import { patch } from './api';
+import { enableInteractiveTools } from './utils';
 
 interface SceneFileInfoPanelProps {
   scene: SceneDataFragment;
-}
-function enableInteractiveTools(scene: SceneDataFragment) {
-  return scene.interactive;
 }
 
 patch.after(
@@ -33,7 +31,7 @@ patch.after(
 patch.after(
   'ScenePage.TabContent',
   (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
-    if (!props.scene.interactive) {
+    if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
     return (

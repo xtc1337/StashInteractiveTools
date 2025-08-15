@@ -1,4 +1,4 @@
-import { GQL } from '../api';
+import { GQL, hooks } from '../api';
 import {
   SceneDataFragment,
   useRunPluginOperationMutation,
@@ -13,7 +13,7 @@ import React, {
 } from 'react';
 import { Script } from '../components';
 import { FunMapper } from 'funscript-utils';
-import { deepMerge } from '../utils';
+import { deepMerge, isIvdbScene } from '../utils';
 import { Funscript } from 'funscript-utils/lib/types';
 import { AnyModifierDef, ModifierPreset } from '../components/modifiers';
 import {
@@ -50,7 +50,11 @@ async function generateHeatmap(url: string) {
   return canvas.toDataURL('image/png');
 }
 
-async function applyScriptChanges(url: string, script: Funscript) {
+async function applyScriptChanges(
+  url: string,
+  script: Funscript & { range?: number },
+) {
+  //const { range: _, ...rest } = script;
   return {
     blobUrl: (window.webkitURL || window.URL).createObjectURL(
       new Blob([JSON.stringify(script)], { type: 'text/plain' }),
@@ -128,10 +132,18 @@ export async function resolveScriptPipeline(
 
 export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [entries, setEntries] = useState<Script[]>([]);
+  const { interactive } = hooks.useInteractive();
+  const interactiveRef = useRef(interactive);
 
   const unmodifiedScript = useRef<Funscript>();
   const [presets, updatePresets] = useState<ModifierPreset[]>([]);
   const [preset, setPreset] = useState<ModifierPreset | null>(null);
+  const { data: stashConfig } = GQL.useConfigurationQuery();
+
+  const ivdbConfig = useRef({ ivdb: false, id: '' });
+  ivdbConfig.current.ivdb = isIvdbScene(scene);
+
+  const handyKey = stashConfig?.configuration?.interface?.handyKey;
 
   const [currentPaths, setCurrentPaths] = useState<ScenePaths>({
     blobUrl: scene.paths.funscript || '',
@@ -139,6 +151,8 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     heatMap: scene.paths.interactive_heatmap,
   });
   const client = useApolloClient();
+
+  const hasInitialized = useRef(false);
   const [pipelines, setPipelines] = useState<ScriptPipeline[]>(() => [
     new ModificationPipeline(),
   ]);
@@ -161,26 +175,39 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   }>();
 
   const runScriptPipeline = useCallback(
-    async (script: Funscript, updatedUrl?: string) => {
+    async (script: Funscript | null, updatedUrl?: string) => {
+      let changes: { blobUrl: string; src: string };
+      let heatMap: string | undefined;
       const url = updatedUrl || currentPaths.src || '';
-      const pipe = await resolveScriptPipeline(
-        {
-          url,
-          script,
-        },
-        pipelines,
-      );
+      if (ivdbConfig.current.ivdb) {
+        changes = {
+          blobUrl: url,
+          src: url,
+        };
+      } else if (script) {
+        const pipe = await resolveScriptPipeline(
+          {
+            url,
+            script,
+          },
+          pipelines,
+        );
 
-      const changes = await applyScriptChanges(url, pipe.script);
-      const heatMap = await generateHeatmap(changes.blobUrl);
+        changes = await applyScriptChanges(url, pipe.script);
+        heatMap = await generateHeatmap(changes.blobUrl);
+      } else {
+        return;
+      }
       const newPaths = {
         ...changes,
         heatMap,
       };
+      console.log('newPaths', newPaths);
       client.writeQuery({
         query: GQL.FindSceneDocument,
         data: {
           findScene: deepMerge({}, scene, {
+            interactive: true,
             paths: {
               funscript: newPaths.blobUrl,
               interactive_heatmap: newPaths.heatMap,
@@ -245,10 +272,14 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   );
 
   useEffect(() => {
-    if (scene.paths.interactive_heatmap) {
+    if (!isIvdbScene(scene) && scene.paths.interactive_heatmap) {
       replaceHeatMap(scene.paths.interactive_heatmap);
     }
-    if (scene.paths.funscript && !unmodifiedScript.current) {
+    if (
+      scene.paths.funscript &&
+      !unmodifiedScript.current &&
+      !isIvdbScene(scene)
+    ) {
       const script = getScript(scene.paths.funscript);
       script.then((s) => {
         unmodifiedScript.current = s;
@@ -267,16 +298,71 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
           mode: 'init',
           scene_id: id,
           origin: window.location.origin,
+          handy_token: handyKey,
         },
       },
     }).catch(console.error);
-  }, [findScripts, id]);
+  }, [findScripts, id, handyKey]);
+
   useEffect(() => {
-    setEntries(data?.runPluginOperation?.scripts ?? []);
-    DB.getAll('presets').then((records) => {
-      updatePresets(records);
+    const scripts = data?.runPluginOperation?.scripts ?? [];
+
+    const shouldUseIVDB =
+      ivdbConfig.current.ivdb && ivdbConfig.current.id !== id;
+    function patchAndSetup() {
+      DB.getAll('presets').then((records) => {
+        updatePresets(records);
+      });
+
+      const interactiveApi = interactiveRef.current;
+      const defaultUploadScript =
+        interactiveApi.uploadScript.bind(interactiveApi);
+
+      const uploadScript = async (funscriptPath: string, apiKey?: string) => {
+        if (!ivdbConfig.current.ivdb)
+          return defaultUploadScript(funscriptPath, apiKey);
+        try {
+          const handy = interactiveApi._handy;
+
+          if (handy.currentMode !== 1) {
+            await handy.setMode(1); // hssp
+          }
+
+          const json: { result: number } = await handy.putJson('hssp/setup', {
+            url: funscriptPath,
+          });
+          // can't call handy.setHsspSetup because it does an un-needed encodeURI call which breaks the token url
+          handy.hsspPreparedUrl = funscriptPath;
+
+          handy.hsspState = 3; // stopped
+          interactiveApi._connected = handy.connected = json.result === 1;
+          /*interactiveApi._connected = await handy
+            .setHsspSetup(funscriptPath)
+            .then((result: number) => result === 1); // HsspSetupResult.downloaded*/
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      interactiveApi.uploadScript = uploadScript.bind(interactiveApi);
+    }
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      patchAndSetup();
+    }
+
+    console.log('scripts', {
+      scripts,
+      shouldUseIVDB,
     });
-  }, [data]);
+    if (shouldUseIVDB && scripts.length == 1) {
+      ivdbConfig.current.id = id;
+
+      runScriptPipeline(null, scripts[0].path).catch(console.error);
+    } else {
+      setEntries(scripts);
+    }
+  }, [data, runScriptPipeline, id]);
+
   const savePresetInternal = useCallback(
     (updatedPreset: ModifierPreset | null, toDelete = false) => {
       setPreset(toDelete ? null : updatedPreset);
