@@ -1,4 +1,4 @@
-import { GQL, hooks } from '../api';
+import { GQL } from '../api';
 import {
   SceneDataFragment,
   useRunPluginOperationMutation,
@@ -21,6 +21,7 @@ import {
   ModificationPipeline,
 } from '../components/modifiers/pipeline';
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
+import { usePatchInteractiveApi } from '../utils/interactive-api-patcher';
 
 const canvas = document.createElement('canvas');
 canvas.width = 1280;
@@ -132,16 +133,12 @@ export async function resolveScriptPipeline(
 
 export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [entries, setEntries] = useState<Script[]>([]);
-  const { interactive } = hooks.useInteractive();
-  const interactiveRef = useRef(interactive);
 
   const unmodifiedScript = useRef<Funscript>();
   const [presets, updatePresets] = useState<ModifierPreset[]>([]);
   const [preset, setPreset] = useState<ModifierPreset | null>(null);
   const { data: stashConfig } = GQL.useConfigurationQuery();
-
-  const ivdbConfig = useRef({ ivdb: false, id: '' });
-  ivdbConfig.current.ivdb = isIvdbScene(scene);
+  const interactiveState = usePatchInteractiveApi(scene);
 
   const handyKey = stashConfig?.configuration?.interface?.handyKey;
 
@@ -179,7 +176,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       let changes: { blobUrl: string; src: string };
       let heatMap: string | undefined;
       const url = updatedUrl || currentPaths.src || '';
-      if (ivdbConfig.current.ivdb) {
+      if (interactiveState.current.ivdb) {
         changes = {
           blobUrl: url,
           src: url,
@@ -308,54 +305,19 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     const scripts = data?.runPluginOperation?.scripts ?? [];
 
     const shouldUseIVDB =
-      ivdbConfig.current.ivdb && ivdbConfig.current.id !== id;
-    function patchAndSetup() {
+      interactiveState.current.ivdb && interactiveState.current.id !== id;
+    function setup() {
       DB.getAll('presets').then((records) => {
         updatePresets(records);
       });
-
-      const interactiveApi = interactiveRef.current;
-      const defaultUploadScript =
-        interactiveApi.uploadScript.bind(interactiveApi);
-
-      const uploadScript = async (funscriptPath: string, apiKey?: string) => {
-        if (!ivdbConfig.current.ivdb)
-          return defaultUploadScript(funscriptPath, apiKey);
-        try {
-          const handy = interactiveApi._handy;
-
-          if (handy.currentMode !== 1) {
-            await handy.setMode(1); // hssp
-          }
-
-          const json: { result: number } = await handy.putJson('hssp/setup', {
-            url: funscriptPath,
-          });
-          // can't call handy.setHsspSetup because it does an un-needed encodeURI call which breaks the token url
-          handy.hsspPreparedUrl = funscriptPath;
-
-          handy.hsspState = 3; // stopped
-          interactiveApi._connected = handy.connected = json.result === 1;
-          /*interactiveApi._connected = await handy
-            .setHsspSetup(funscriptPath)
-            .then((result: number) => result === 1); // HsspSetupResult.downloaded*/
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      interactiveApi.uploadScript = uploadScript.bind(interactiveApi);
     }
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      patchAndSetup();
+      setup();
     }
 
-    console.log('scripts', {
-      scripts,
-      shouldUseIVDB,
-    });
     if (shouldUseIVDB && scripts.length == 1) {
-      ivdbConfig.current.id = id;
+      interactiveState.current.id = id;
 
       runScriptPipeline(null, scripts[0].path).catch(console.error);
     } else {
