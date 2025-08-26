@@ -2,8 +2,9 @@ import { MethodPatcher } from './types';
 
 export const uploadScriptPatcher: MethodPatcher<'uploadScript'> = {
   name: 'uploadScript',
-  bind: (ctx) => {
-    return async function (funscriptPath: string, apiKey?: string) {
+  patch: function (ctx) {
+    return async (funscriptPath: string, apiKey?: string) => {
+      ctx.logger.log('state', ctx.state.current);
       if (!ctx.state.current.ivdb) return ctx.original(funscriptPath, apiKey);
       try {
         const handy = ctx.api._handy;

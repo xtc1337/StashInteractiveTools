@@ -21,7 +21,8 @@ import {
   ModificationPipeline,
 } from '../components/modifiers/pipeline';
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
-import { usePatchInteractiveApi } from '../utils/interactive-api-patcher';
+import { usePatchedInteractiveApi } from '../utils/interactive-api-patcher';
+import { omit } from 'lodash';
 
 const canvas = document.createElement('canvas');
 canvas.width = 1280;
@@ -55,10 +56,9 @@ async function applyScriptChanges(
   url: string,
   script: Funscript & { range?: number },
 ) {
-  //const { range: _, ...rest } = script;
   return {
     blobUrl: (window.webkitURL || window.URL).createObjectURL(
-      new Blob([JSON.stringify(script)], { type: 'text/plain' }),
+      new Blob([JSON.stringify(omit(script, 'range'))], { type: 'text/plain' }),
     ),
     src: url,
   };
@@ -138,7 +138,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [presets, updatePresets] = useState<ModifierPreset[]>([]);
   const [preset, setPreset] = useState<ModifierPreset | null>(null);
   const { data: stashConfig } = GQL.useConfigurationQuery();
-  const interactiveState = usePatchInteractiveApi(scene);
+  const interactiveState = usePatchedInteractiveApi(scene);
 
   const handyKey = stashConfig?.configuration?.interface?.handyKey;
 

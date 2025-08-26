@@ -1,5 +1,6 @@
-import { InteractiveAPI } from '../../api';
+import { Any, InteractiveAPI } from '../../api';
 import { MutableRefObject } from 'react';
+import { createDebugConsole } from '../common';
 
 export type InteractiveState = MutableRefObject<{
   id: string;
@@ -13,13 +14,18 @@ export type PatchContext<M extends PatchableMethodName> = {
   original: InteractiveAPI[M];
 
   name: M;
+  logger: ReturnType<typeof createDebugConsole>;
 } & InteractivePatchContext;
 export type PatchedMethod<M extends PatchableMethodName> = InteractiveAPI[M] & {
   _patched: true;
 };
 export type MethodPatcher<M extends PatchableMethodName> = {
   name: M;
-  bind: (ctx: PatchContext<M>) => InteractiveAPI[M];
+  patch: (ctx: PatchContext<M>) => InteractiveAPI[M];
 };
 
-export type PatchableMethodName = keyof InteractiveAPI;
+type FunctionPropertyNames<T> = {
+  [K in keyof T]: T[K] extends (...args: Any[]) => Any ? K : never;
+}[keyof T];
+
+export type PatchableMethodName = FunctionPropertyNames<InteractiveAPI>;

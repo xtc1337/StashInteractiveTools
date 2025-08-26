@@ -1,4 +1,7 @@
 .stash-interactive-tools {
+  .nav-tabs {
+    margin-bottom: 1rem;
+  }
   .range-slider {
     position: relative;
     width: 100%;
@@ -81,7 +84,6 @@
 }
 
 .stash-interactive-tools-modify {
-  margin-top: 10px;
   h5 {
     button {
       display: inline-block !important;
