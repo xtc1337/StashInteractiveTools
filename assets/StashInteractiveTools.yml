@@ -1,7 +1,7 @@
 name: Stash Interactive Tools
 description: Enhance your Stash Interactive experience
-version: 0.3
-url: https://github.com/scruffynerf/StashInteractiveTools/
+version: 1.1.0-next
+url: https://github.com/xtc1337/StashInteractiveTools/
 exec:
   - python
   - '{pluginDir}/StashInteractiveTools.py'

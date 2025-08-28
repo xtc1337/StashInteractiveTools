@@ -112,7 +112,7 @@ def ensure_requirements(*deps: str):
 def run(c:'Config'):
     global config
     config = c
-    ensure_requirements("stashapp-tools==0.2.58")
-    ensure_requirements("PIL:pillow")
+    ensure_requirements("stashapp-tools==0.2.58","PIL:pillow")
+
 
 
