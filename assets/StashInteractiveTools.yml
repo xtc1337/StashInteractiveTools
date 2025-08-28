@@ -1,7 +1,7 @@
 name: Stash Interactive Tools
 description: Enhance your Stash Interactive experience
-version: 0.2
-url: https://github.com/blackx69/StashInteractiveTools/
+version: 0.3
+url: https://github.com/scruffynerf/StashInteractiveTools/
 exec:
   - python
   - '{pluginDir}/StashInteractiveTools.py'
@@ -19,7 +19,6 @@ ui:
     connect-src:
       - 'blob:'
       - 'https://scripts01.handyfeeling.com'
-
 settings:
   enable_tagging:
     displayName: Enable Tagging Support
@@ -31,6 +30,24 @@ settings:
     type: STRING
   alwaysDefaultToStashSyncOffset:
     displayName: Always default to using the Stash configured server offset first
+    type: BOOLEAN
+  remapDisableDuplicates:
+    displayName: rename Duplicate funscripts (same exact actions) to .funscriptdupe (disabling them)
+    type: BOOLEAN
+  remapDisplayTime:
+    displayName: add Duration to the generated heatmaps
+    type: BOOLEAN
+  remapDisplayDefaultText:
+    displayName: add Default text to the generated heatmap for the default funscript
+    type: BOOLEAN
+  remapMapToVideoLength:
+    displayName: Map over video duration not funscript length(s) [and flags mismatches]
+    type: BOOLEAN
+  remapReviewTag:
+    displayName: Name of tag to mark items needing review (length or otherwise)
+    type: STRING
+  remapReplaceZero:
+    displayName: Change 0 to 1 for speed on funscripts so the map displays (Warning! Uses direct SQL - Backup!)
     type: BOOLEAN
 tasks:
   - name: 'Install'
@@ -45,3 +62,7 @@ tasks:
     description: Apply Tag
     defaultArgs:
       mode: tag
+  - name: 'remap'
+    description: Build MultiHeatmap
+    defaultArgs:
+      mode: remap
