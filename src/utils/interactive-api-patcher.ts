@@ -1,9 +1,8 @@
-import { Any, hooks, InteractiveAPI } from '../api';
-import { useMemo, useRef } from 'react';
-import { SceneDataFragment } from '../generated-graphql';
-import { createDebugConsole, isIvdbScene } from './common';
+import { Any, InteractiveAPI } from '../api';
+import { createDebugConsole } from './common';
 import {
   InteractivePatchContext,
+  InteractiveState,
   MethodPatcher,
   PatchableMethodName,
   PatchContext,
@@ -11,7 +10,7 @@ import {
   uploadScriptPatcher,
 } from './interactive';
 
-const patchMethod = <M extends PatchableMethodName>(
+export const patchMethod = <M extends PatchableMethodName>(
   ctx: InteractivePatchContext,
 
   patcher: MethodPatcher<M>,
@@ -30,28 +29,23 @@ const patchMethod = <M extends PatchableMethodName>(
   patchContext.logger.log('patching...');
 
   const patchedMethod = patcher.patch(patchContext) as PatchedMethod<M>;
-  patchedMethod._patched = true;
+  const patched = patchedMethod.bind(ctx.api);
+  patched._patched = true;
 
-  (ctx.api as Any)[methodName] = patchedMethod.bind(ctx.api);
+  (ctx.api as Any)[methodName] = patched;
 };
-export function usePatchedInteractiveApi(scene: SceneDataFragment) {
-  const { interactive } = hooks.useInteractive();
-  const interactiveRef = useRef(interactive);
 
-  const state = useRef({
-    id: '',
-    ivdb: false,
-  });
-
-  state.current.ivdb = isIvdbScene(scene);
-  useMemo(() => {
-    const api = interactiveRef.current;
-    const ctx: InteractivePatchContext = {
-      api: api,
-      state: state,
-    };
-    patchMethod(ctx, uploadScriptPatcher);
-  }, []);
-
-  return state;
+export type SITPluginConfig = {
+  alwaysDefaultToStashSyncOffset: boolean;
+  handleHandyFileTokens: boolean;
+};
+export function usePatchedInteractiveApi(
+  api: InteractiveAPI,
+  state: InteractiveState,
+) {
+  const ctx: InteractivePatchContext = {
+    api: api,
+    state,
+  };
+  patchMethod(ctx, uploadScriptPatcher);
 }

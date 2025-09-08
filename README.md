@@ -5,6 +5,7 @@ Current features:
 - Adds ability to change sync offset
 - Adds ability to change the stroke length
 - Adds supports for multiple funscripts (with heatmap support)
+- Adds support for ivdb tokens (filescript and via url)
 
 # Multi Funscripts
 
@@ -32,6 +33,9 @@ The logic states:
 Also IVDB.io tokens are now supported in Stash. To enable you still need to have the video locally and then input the url of the video on ivdb.io as one of the scripts urls
 <img width="460" height="99" alt="image" src="https://github.com/user-attachments/assets/9bad80c0-65b5-4d0c-8efb-15eaa8e66b95" />
 
+If you already have a collection of downloaded ivdb tokens you can enable "Handle funscript files that are handy tokens (no ivdb url needed)"
+<img src="https://github.com/user-attachments/assets/9ece4c32-30a5-410e-b90c-5350c8169200"/>
+
 # Modify Funscripts
 
 Allows user to modify funscripts and save presets. This mimics a few features found on funscript.io that was created by @defucilis
@@ -44,4 +48,3 @@ Allows user to modify funscripts and save presets. This mimics a few features fo
 
 - PythonToolsInstaller plugin
 - Python 3.10+
-- [Custom Build](https://github.com/stashapp/stash/commit/c8d4dacffd011653b083cfe0e3f0591fb0e3de43) version of stash

@@ -1,6 +1,6 @@
 name: Stash Interactive Tools
 description: Enhance your Stash Interactive experience
-version: 0.2
+version: 1.1.0
 url: https://github.com/blackx69/StashInteractiveTools/
 exec:
   - python
@@ -31,6 +31,9 @@ settings:
     type: STRING
   alwaysDefaultToStashSyncOffset:
     displayName: Always default to using the Stash configured server offset first
+    type: BOOLEAN
+  handleHandyFileTokens:
+    displayName: Handle funscript files that are handy tokens (no ivdb url needed)
     type: BOOLEAN
 tasks:
   - name: 'Install'

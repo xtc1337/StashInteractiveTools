@@ -1,10 +1,15 @@
 import { Any, InteractiveAPI } from '../../api';
 import { MutableRefObject } from 'react';
 import { createDebugConsole } from '../common';
+import { Funscript } from 'funscript-utils/lib/types';
 
 export type InteractiveState = MutableRefObject<{
   id: string;
   ivdb: boolean;
+  script: Funscript | null;
+  config: {
+    handleHandyFileTokens: boolean;
+  };
 }>;
 export type InteractivePatchContext = {
   api: InteractiveAPI;

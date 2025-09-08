@@ -1,10 +1,9 @@
-import { Nav, Tab } from 'react-bootstrap';
-
-import React, { useState } from 'react';
+import React from 'react';
 import { ScriptModificationPanel } from './ScriptModificationPanel';
 
 export const ModifyScript = () => {
-  const [activeTabKey, setActiveTabKey] = useState('modifications-panel');
+  return <ScriptModificationPanel />;
+  /*const [activeTabKey, setActiveTabKey] = useState('modifications-panel');
   return (
     <Tab.Container
       activeKey={activeTabKey}
@@ -26,5 +25,5 @@ export const ModifyScript = () => {
         </Tab.Pane>
       </Tab.Content>
     </Tab.Container>
-  );
+  );      */
 };
