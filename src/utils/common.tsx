@@ -2,14 +2,16 @@ import React from 'react';
 import { SceneDataFragment } from '../generated-graphql';
 
 export const DEFAULT_NAMESPACE = 'StashInteractiveTools';
-export function createDebugConsole(namespace = '') {
+export function createDebugConsole(namespace = '', isDebug?: boolean) {
   const isBrowser = typeof window !== 'undefined';
 
   namespace = [DEFAULT_NAMESPACE, namespace].filter(Boolean).join(':');
-  const isDebug =
-    (isBrowser &&
-      new URLSearchParams(window.location.search).get('debug') === 'true') ||
-    (typeof process !== 'undefined' && process.env?.DEBUG === 'true');
+  if (typeof isDebug === 'undefined') {
+    isDebug =
+      (isBrowser &&
+        new URLSearchParams(window.location.search).get('debug') === 'true') ||
+      (typeof process !== 'undefined' && process.env?.DEBUG === 'true');
+  }
 
   const prefix = namespace ? `[${namespace}]` : '';
 

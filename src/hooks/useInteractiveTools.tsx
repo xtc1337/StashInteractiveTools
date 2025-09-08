@@ -1,4 +1,4 @@
-import { GQL, hooks } from '../api';
+import { Any, GQL } from '../api';
 import {
   SceneDataFragment,
   useRunPluginOperationMutation,
@@ -12,7 +12,6 @@ import React, {
   useState,
 } from 'react';
 import { Script } from '../components';
-import { FunMapper } from 'funscript-utils';
 import { deepMerge, isIvdbScene } from '../utils';
 import { Funscript } from 'funscript-utils/lib/types';
 import { AnyModifierDef, ModifierPreset } from '../components/modifiers';
@@ -21,43 +20,25 @@ import {
   ModificationPipeline,
 } from '../components/modifiers/pipeline';
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
-
-const canvas = document.createElement('canvas');
-canvas.width = 1280;
-canvas.height = 60;
-const rootVars = document.documentElement;
-
-function replaceHeatMap(url: string) {
-  rootVars.style.setProperty(
-    '--stash-interactive-tools-heatmap',
-    `url(${url})`,
-    'important',
-  );
-}
-
-async function getScript(url: string) {
-  return (await fetch(url).then((response) => response.json())) as Funscript;
-}
-
-async function generateHeatmap(url: string) {
-  const script = await getScript(url);
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  FunMapper.renderHeatmap(canvas, script, {
-    background: 'rgba(255,255, 255, 0)',
-  });
-  return canvas.toDataURL('image/png');
-}
+import {
+  SITPluginConfig,
+  usePatchedInteractiveApi,
+} from '../utils/interactive-api-patcher';
+import { omit } from 'lodash';
+import {
+  generateHeatmap,
+  getFunscript,
+  replaceHeatMap,
+} from '../utils/interactive';
+import useInteractive = PluginApi.hooks.useInteractive;
 
 async function applyScriptChanges(
   url: string,
   script: Funscript & { range?: number },
 ) {
-  //const { range: _, ...rest } = script;
   return {
     blobUrl: (window.webkitURL || window.URL).createObjectURL(
-      new Blob([JSON.stringify(script)], { type: 'text/plain' }),
+      new Blob([JSON.stringify(omit(script, 'range'))], { type: 'text/plain' }),
     ),
     src: url,
   };
@@ -132,16 +113,33 @@ export async function resolveScriptPipeline(
 
 export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [entries, setEntries] = useState<Script[]>([]);
-  const { interactive } = hooks.useInteractive();
-  const interactiveRef = useRef(interactive);
 
   const unmodifiedScript = useRef<Funscript>();
   const [presets, updatePresets] = useState<ModifierPreset[]>([]);
   const [preset, setPreset] = useState<ModifierPreset | null>(null);
   const { data: stashConfig } = GQL.useConfigurationQuery();
+  const sitPluginConfig = stashConfig?.configuration?.plugins?.[
+    'StashInteractiveTools'
+  ] as SITPluginConfig | undefined;
 
-  const ivdbConfig = useRef({ ivdb: false, id: '' });
-  ivdbConfig.current.ivdb = isIvdbScene(scene);
+  const { interactive } = useInteractive();
+
+  const interactiveState = useRef({
+    id: '',
+    ivdb: false,
+    script: null as Funscript | null,
+    config: sitPluginConfig || ({} as SITPluginConfig),
+    cache: {} as Record<string, Any>,
+  });
+
+  interactiveState.current.ivdb =
+    (scene.id === interactiveState.current.id &&
+      interactiveState.current.ivdb) ||
+    isIvdbScene(scene);
+  interactiveState.current.config =
+    sitPluginConfig || interactiveState.current.config;
+
+  usePatchedInteractiveApi(interactive, interactiveState);
 
   const handyKey = stashConfig?.configuration?.interface?.handyKey;
 
@@ -177,9 +175,9 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const runScriptPipeline = useCallback(
     async (script: Funscript | null, updatedUrl?: string) => {
       let changes: { blobUrl: string; src: string };
-      let heatMap: string | undefined;
+
       const url = updatedUrl || currentPaths.src || '';
-      if (ivdbConfig.current.ivdb) {
+      if (interactiveState.current.ivdb) {
         changes = {
           blobUrl: url,
           src: url,
@@ -194,15 +192,18 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
         );
 
         changes = await applyScriptChanges(url, pipe.script);
-        heatMap = await generateHeatmap(changes.blobUrl);
       } else {
         return;
       }
+      const heatMap = await generateHeatmap(changes.blobUrl);
       const newPaths = {
         ...changes,
         heatMap,
       };
-      console.log('newPaths', newPaths);
+
+      if (newPaths.heatMap) {
+        replaceHeatMap(newPaths.heatMap);
+      }
       client.writeQuery({
         query: GQL.FindSceneDocument,
         data: {
@@ -224,6 +225,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     },
     [currentPaths, pipelines, client, scene],
   );
+
   const updateScript = useCallback(
     async (script?: Funscript | null) => {
       script = script || unmodifiedScript.current;
@@ -264,24 +266,23 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const onChange = useCallback(
     async (url: string) => {
       const scriptUrl = currentPaths.src !== url ? url : currentPaths.src;
-      const script = await getScript(scriptUrl);
+      const script = await getFunscript(scriptUrl);
       unmodifiedScript.current = script;
+      interactiveState.current.script = script;
       await runScriptPipeline(script, scriptUrl);
     },
     [currentPaths, runScriptPipeline],
   );
 
   useEffect(() => {
-    if (!isIvdbScene(scene) && scene.paths.interactive_heatmap) {
+    const ivdb = interactiveState.current.ivdb;
+    if (!ivdb && scene.paths.interactive_heatmap) {
       replaceHeatMap(scene.paths.interactive_heatmap);
     }
-    if (
-      scene.paths.funscript &&
-      !unmodifiedScript.current &&
-      !isIvdbScene(scene)
-    ) {
-      const script = getScript(scene.paths.funscript);
+    if (scene.paths.funscript && !unmodifiedScript.current && !ivdb) {
+      const script = getFunscript(scene.paths.funscript);
       script.then((s) => {
+        interactiveState.current.script = s;
         unmodifiedScript.current = s;
         return updateScript(s);
       });
@@ -308,54 +309,19 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     const scripts = data?.runPluginOperation?.scripts ?? [];
 
     const shouldUseIVDB =
-      ivdbConfig.current.ivdb && ivdbConfig.current.id !== id;
-    function patchAndSetup() {
+      interactiveState.current.ivdb && interactiveState.current.id !== id;
+    function setup() {
       DB.getAll('presets').then((records) => {
         updatePresets(records);
       });
-
-      const interactiveApi = interactiveRef.current;
-      const defaultUploadScript =
-        interactiveApi.uploadScript.bind(interactiveApi);
-
-      const uploadScript = async (funscriptPath: string, apiKey?: string) => {
-        if (!ivdbConfig.current.ivdb)
-          return defaultUploadScript(funscriptPath, apiKey);
-        try {
-          const handy = interactiveApi._handy;
-
-          if (handy.currentMode !== 1) {
-            await handy.setMode(1); // hssp
-          }
-
-          const json: { result: number } = await handy.putJson('hssp/setup', {
-            url: funscriptPath,
-          });
-          // can't call handy.setHsspSetup because it does an un-needed encodeURI call which breaks the token url
-          handy.hsspPreparedUrl = funscriptPath;
-
-          handy.hsspState = 3; // stopped
-          interactiveApi._connected = handy.connected = json.result === 1;
-          /*interactiveApi._connected = await handy
-            .setHsspSetup(funscriptPath)
-            .then((result: number) => result === 1); // HsspSetupResult.downloaded*/
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      interactiveApi.uploadScript = uploadScript.bind(interactiveApi);
     }
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      patchAndSetup();
+      setup();
     }
 
-    console.log('scripts', {
-      scripts,
-      shouldUseIVDB,
-    });
     if (shouldUseIVDB && scripts.length == 1) {
-      ivdbConfig.current.id = id;
+      interactiveState.current.id = id;
 
       runScriptPipeline(null, scripts[0].path).catch(console.error);
     } else {

@@ -31,6 +31,9 @@ settings:
   alwaysDefaultToStashSyncOffset:
     displayName: Always default to using the Stash configured server offset first
     type: BOOLEAN
+  handleHandyFileTokens:
+    displayName: Handle funscript files that are handy tokens (no ivdb url needed)
+    type: BOOLEAN
   remapDisableDuplicates:
     displayName: rename Duplicate funscripts (same exact actions) to .funscriptdupe (disabling them)
     type: BOOLEAN
