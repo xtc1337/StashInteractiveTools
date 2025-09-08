@@ -56,6 +56,7 @@ export const uploadScriptPatcher: MethodPatcher<'uploadScript'> = {
           url: '',
         };
       }
+      let useOriginal = true;
 
       if (state.script && !state.ivdb && state.config.handleHandyFileTokens) {
         const script = state.script;
@@ -70,8 +71,11 @@ export const uploadScriptPatcher: MethodPatcher<'uploadScript'> = {
           } else {
             cache.url = funscriptPath = await getHandyFeelingUrl(script);
           }
+          useOriginal = false;
         }
-      } else if (!state.ivdb) return ctx.original(funscriptPath, apiKey);
+      }
+      if (!state.ivdb && useOriginal)
+        return ctx.original(funscriptPath, apiKey);
 
       try {
         const handy = ctx.api._handy;
