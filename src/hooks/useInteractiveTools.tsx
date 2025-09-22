@@ -5,6 +5,7 @@ import {
 } from '../generated-graphql';
 import { useApolloClient } from '@apollo/client';
 import React, {
+  Dispatch,
   useCallback,
   useEffect,
   useMemo,
@@ -12,7 +13,17 @@ import React, {
   useState,
 } from 'react';
 import { Script } from '../components';
-import { deepMerge, isIvdbScene } from '../utils';
+import {
+  AnySITHook,
+  deepMerge,
+  enableHandyTokens,
+  generateHeatmap,
+  getFunscript,
+  isIvdbScene,
+  replaceHeatMap,
+  SITPluginConfig,
+  usePatchedInteractiveApi,
+} from '../utils';
 import { Funscript } from 'funscript-utils/lib/types';
 import { AnyModifierDef, ModifierPreset } from '../components/modifiers';
 import {
@@ -20,25 +31,13 @@ import {
   ModificationPipeline,
 } from '../components/modifiers/pipeline';
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
-import {
-  SITPluginConfig,
-  usePatchedInteractiveApi,
-} from '../utils/interactive-api-patcher';
-import { omit } from 'lodash';
-import {
-  generateHeatmap,
-  getFunscript,
-  replaceHeatMap,
-} from '../utils/interactive';
+import { DefaultHandyClient } from '../utils/interactive/client';
 import useInteractive = PluginApi.hooks.useInteractive;
 
-async function applyScriptChanges(
-  url: string,
-  script: Funscript & { range?: number },
-) {
+async function applyScriptChanges(url: string, script: Funscript) {
   return {
     blobUrl: (window.webkitURL || window.URL).createObjectURL(
-      new Blob([JSON.stringify(omit(script, 'range'))], { type: 'text/plain' }),
+      new Blob([JSON.stringify(script)], { type: 'text/plain' }),
     ),
     src: url,
   };
@@ -87,6 +86,7 @@ export type InteractiveContext = {
   ): Promise<T | undefined> | void;
   updateScript: (script?: Funscript | null) => Promise<ScenePaths | undefined>;
   updateModifiers: (modifiers: AnyModifierDef[]) => void;
+  setHooks: Dispatch<AnySITHook[]>;
   readonly pipelines: ScriptPipeline[];
 };
 const InteractiveToolsContext = React.createContext<InteractiveContext>(
@@ -118,19 +118,35 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [presets, updatePresets] = useState<ModifierPreset[]>([]);
   const [preset, setPreset] = useState<ModifierPreset | null>(null);
   const { data: stashConfig } = GQL.useConfigurationQuery();
+
+  const [currentHooks, setHooks] = useState([enableHandyTokens]);
   const sitPluginConfig = stashConfig?.configuration?.plugins?.[
     'StashInteractiveTools'
   ] as SITPluginConfig | undefined;
 
   const { interactive } = useInteractive();
 
+  const device = useRef<DefaultHandyClient>();
+  if (!device.current) {
+    device.current = new DefaultHandyClient(
+      interactive._handy,
+      interactive.handyKey,
+      interactive.scriptOffset,
+    );
+  }
+
   const interactiveState = useRef({
     id: '',
     ivdb: false,
     script: null as Funscript | null,
+    blobUrl: null as string | null,
     config: sitPluginConfig || ({} as SITPluginConfig),
+    device: device.current,
+    hooks: currentHooks,
     cache: {} as Record<string, Any>,
   });
+
+  interactiveState.current.hooks = currentHooks;
 
   interactiveState.current.ivdb =
     (scene.id === interactiveState.current.id &&
@@ -141,7 +157,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
 
   usePatchedInteractiveApi(interactive, interactiveState);
 
-  const handyKey = stashConfig?.configuration?.interface?.handyKey;
+  const handyKey = interactive.handyKey;
 
   const [currentPaths, setCurrentPaths] = useState<ScenePaths>({
     blobUrl: scene.paths.funscript || '',
@@ -204,6 +220,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       if (newPaths.heatMap) {
         replaceHeatMap(newPaths.heatMap);
       }
+      interactiveState.current.blobUrl = newPaths.blobUrl;
       client.writeQuery({
         query: GQL.FindSceneDocument,
         data: {
@@ -338,12 +355,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
             const presetIndex = savedPresets.findIndex(
               (p) => p.id === updatedPreset.id,
             );
-            console.log(
-              'savePresetInternal',
-              updatedPreset,
-              presetIndex,
-              savedPresets,
-            );
+
             if (toDelete) {
               if (presetIndex !== -1) {
                 savedPresets.splice(presetIndex, 1);
@@ -386,6 +398,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       getPipeline,
       updateScript,
       updateModifiers,
+      setHooks,
     }),
     [
       entries,
@@ -402,6 +415,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       updateModifiers,
       savePresetInternal,
       presets,
+      setHooks,
     ],
   );
   return (

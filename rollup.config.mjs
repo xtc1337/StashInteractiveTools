@@ -88,7 +88,9 @@ function emitAssetsPlugin(assetsDir) {
 const prod = process.env.NODE_ENV === 'production';
 const plugins = [
   peerDepsExternal(),
-  resolve(),
+  resolve({
+    browser: true,
+  }),
   commonjs(),
   typescript({ tsconfig: './tsconfig.json' }),
   terser(),
@@ -154,11 +156,13 @@ export default [
         dir: './dist',
         format: 'cjs',
         sourcemap: !prod,
+
         sourcemapBaseUrl: !prod
           ? 'http://localhost:9999/plugin/StashInteractiveTools/assets/'
           : '',
       },
     ],
+    context: 'globalThis',
     plugins,
 
     external: [

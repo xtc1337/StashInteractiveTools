@@ -1,5 +1,6 @@
 import { Funscript } from 'funscript-utils/lib/types';
 import { FunMapper } from 'funscript-utils';
+import videojs from 'video.js';
 
 const canvas = document.createElement('canvas');
 canvas.width = 1280;
@@ -30,3 +31,7 @@ export async function generateHeatmap(urlOrFunscript: string | Funscript) {
   });
   return canvas.toDataURL('image/png');
 }
+
+export const VIDEO_PLAYER_ID = 'VideoJsPlayer';
+export const getPlayerPosition = () =>
+  videojs.getPlayer(VIDEO_PLAYER_ID)?.currentTime();

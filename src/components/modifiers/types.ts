@@ -2,11 +2,6 @@ import { Funscript } from 'funscript-utils/lib/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Any = any;
-declare module 'funscript-utils/lib/types' {
-  interface Funscript {
-    range: number;
-  }
-}
 
 // === Core Option Types ===
 

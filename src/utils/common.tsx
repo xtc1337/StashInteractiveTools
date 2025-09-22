@@ -2,6 +2,7 @@ import React from 'react';
 import { SceneDataFragment } from '../generated-graphql';
 
 export const DEFAULT_NAMESPACE = 'StashInteractiveTools';
+
 export function createDebugConsole(namespace = '', isDebug?: boolean) {
   const isBrowser = typeof window !== 'undefined';
 

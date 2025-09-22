@@ -75,8 +75,12 @@ def get_funscripts(file):
 
 def analyze_file(file, scene_id):
     files = get_funscripts(file)
-    return deterministic_sort_scripts(
+    scripts = deterministic_sort_scripts(
         list(map(lambda script: map_script(script, file, scene_id), files)))
+    if 'omit_default' in config.FRAGMENT['args']:
+        scripts = list(
+            filter(lambda script: script['label'] != 'Default', scripts))
+    return scripts
 
 
 def contains_value(array, value):
