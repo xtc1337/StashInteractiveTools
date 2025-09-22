@@ -60,3 +60,32 @@ export const pausePatcher = withPatcher('pause', (ctx) => {
     await device.stop();
   });
 });
+
+export const ensurePlayingPatcher = withPatcher('ensurePlaying', (ctx) => {
+  ctx.value(async function ensurePlaying(position: number) {
+    const {
+      state: {
+        current: { device },
+      },
+    } = ctx;
+    ctx.logger.debug('ensurePlaying', position, device.isPlaying);
+    if (device.isPlaying) {
+      return;
+    }
+
+    await device.play(position);
+  });
+});
+
+export const playPatcher = withPatcher('play', (ctx) => {
+  ctx.value(async function play(position: number) {
+    const {
+      state: {
+        current: { device },
+      },
+    } = ctx;
+    ctx.logger.debug('play', position, device.isPlaying);
+
+    await device.play(position);
+  });
+});

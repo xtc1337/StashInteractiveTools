@@ -126,6 +126,7 @@ export class DefaultHandyClient implements HapticDevice {
     if (!this.isConnected) {
       return false;
     }
+
     this._isPlaying = await this._handy
       .setHsspPlay(
         Math.round(timeMs * 1000 + this._config.offset),
