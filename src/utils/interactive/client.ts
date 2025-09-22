@@ -102,9 +102,6 @@ export class DefaultHandyClient implements HapticDevice {
   ): Promise<{ success: boolean; scriptContent?: ScriptData }> {
     if (!scriptData.url) throw new Error('Script URL is required');
 
-    if (!this.isConnected) {
-      return { success: false };
-    }
     if (this._handy.currentMode !== 1) {
       await this._handy.setMode(1); // hssp
     }
@@ -120,6 +117,9 @@ export class DefaultHandyClient implements HapticDevice {
 
     this._handy.hsspState = 3; // stopped
     this._handy.connected = json.result === 1;
+    if (this._handy.connected) {
+      this._connectionState = ConnectionState.CONNECTED;
+    }
     return { success: true };
   }
   async play(timeMs: number) {
