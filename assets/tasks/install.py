@@ -16,7 +16,7 @@ from inspect import stack
 config: 'Config'
 
 
-def _parse_package(specifier: str) -> tuple[str, str, str] | None:
+def _parse_package(specifier: str):
     """
     Parses a package specifier in the format "import_name:package_name==version"
     and returns a tuple of (package_name, version, import_name)

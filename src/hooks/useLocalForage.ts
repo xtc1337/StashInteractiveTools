@@ -116,7 +116,7 @@ export const useStashToolsConfig = (): [
       const pluginConfig =
         stashConfig?.configuration.plugins['StashInteractiveTools'];
       const alwaysDefaultToStashSyncOffset =
-        (pluginConfig.alwaysDefaultToStashSyncOffset as boolean) ?? false;
+        (pluginConfig?.alwaysDefaultToStashSyncOffset as boolean) ?? false;
       setConfig({
         ...data,
         ready: true,
