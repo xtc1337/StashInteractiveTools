@@ -17,6 +17,7 @@ import YAML from 'yaml';
 
 import 'dotenv/config';
 import { Writable } from 'stream';
+
 const ASSETS_TO_OMIT = ['payload.json'];
 const META_FILE_PATH = 'dist/StashInteractiveTools.yml';
 const nullWriteStream = new Writable({
@@ -134,8 +135,12 @@ export default [
     cache: prod,
     output: [
       {
-        banner: `window.require = function (name) {
-        return {
+        banner: `(function StashInteractiveTools_init(w){
+        var window = w;
+        const require = function(name){
+           let  value = typeof window.require === 'function' ? window.require(name) : undefined;
+           if(value) return value;
+           return {
              'global/window':window,
             'global/document':window.document,
            "react":window.PluginApi.React,
@@ -148,14 +153,13 @@ export default [
            '@fortawesome/free-regular-svg-icons':window.PluginApi.libraries.FontAwesomeRegular,
            '@fortawesome/free-solid-svg-icons':window.PluginApi.libraries.FontAwesomeSolid,
            
-        }[name];
-  
-};
-`,
+          }[name];
+        }`,
         //file: packageJson.main,
         dir: './dist',
         format: 'cjs',
         sourcemap: !prod,
+        footer: `})(window);`,
 
         sourcemapBaseUrl: !prod
           ? 'http://localhost:9999/plugin/StashInteractiveTools/assets/'
