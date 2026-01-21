@@ -39,6 +39,7 @@ class Config:
     ENABLE_TAGGING: bool = False
     TAG_NAME: str = '[SIT: Multi-Script]'
     NAMING_CONVENTION: str = ''
+    HANDY_TOKEN: str = ''
     PAYLOAD_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                 'payload.json')
 
@@ -98,4 +99,5 @@ def get_config():
     if not tag_name:
         tag_name = '[SIT: Multi-Script]'
     config.TAG_NAME = tag_name
+    config.HANDY_TOKEN = config.FRAGMENT["args"].get("handy_token","")
     return config

@@ -3,6 +3,11 @@
 declare namespace PluginApi {
   const React: typeof import('react');
   const ReactDOM: typeof import('react-dom');
+  type PropsWithChildren = React.PropsWithChildren;
+  type ReactElement = React.ReactElement;
+  type ReactNode = React.ReactNode;
+  type FC = React.FC;
+
   namespace GQL {
     const AddGalleryImagesDocument: { [key: string]: any };
     const AddTempDlnaipDocument: { [key: string]: any };
@@ -1014,6 +1019,22 @@ declare namespace PluginApi {
       ScenePreview: React.FC<IScenePreviewProps>;
     }>;
   }
+  export interface ISettingModal<T> {
+    heading?: React.ReactNode;
+    headingID?: string;
+    subHeadingID?: string;
+    subHeading?: React.ReactNode;
+    value: T | undefined;
+    close: (v?: T) => void;
+    renderField: (
+      value: T | undefined,
+      setValue: (v?: T) => void,
+      error?: string,
+    ) => React.JSX.Element;
+    modalProps?: typeof import('react-bootstrap').ModalProps;
+    validate?: (v: T) => boolean | undefined;
+    error?: string | undefined;
+  }
   const components: {
     HoverPopover: React.FC<any>;
     TagLink: React.FC<any>;
@@ -1053,6 +1074,7 @@ declare namespace PluginApi {
     StringListSetting: React.FC<any>;
     ConstantSetting: React.FC<any>;
     SceneFileInfoPanel: Rect.FC<any>;
+    SettingModel: <T>(props: ISettingModal<T>) => React.ReactNode;
   };
   namespace utils {
     namespace NavUtils {
@@ -1579,15 +1601,28 @@ declare namespace PluginApi {
     };
   }
   export type ComponentNames = keyof typeof components | string;
+  export type PatchFunction<T extends any = any> = (
+    props: PropsWithChildren<T>,
+    ...args: any[]
+  ) => ReactNode;
   namespace patch {
-    function before(target: ComponentNames, fn: Function): void;
+    function before<T extends any = any>(
+      target: ComponentNames,
+      fn: PatchFunction<T>,
+    ): void;
 
-    function instead(target: ComponentNames, fn: Function): void;
+    function instead<T extends any = any>(
+      target: ComponentNames,
+      fn: PatchFunction<T>,
+    ): void;
 
-    function after(target: ComponentNames, fn: Function): void;
+    function after<T extends any = any>(
+      target: ComponentNames,
+      fn: PatchFunction<T>,
+    ): void;
   }
   namespace register {
-    function route(path: string, component: React.FC<any>): void;
+    function route(path: string, component: FC<any>): void;
   }
 }
 

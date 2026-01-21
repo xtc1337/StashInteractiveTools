@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Apollo, gql } from './api';
+import { useMutation, gql } from '@apollo/client';
 import type {
   MutationResult,
   MutationTuple,
@@ -16951,7 +16951,7 @@ export function useRunPluginOperationMutation<T>(
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useMutation<
+  return useMutation<
     RunPluginOperationMutation<T>,
     RunPluginOperationMutationVariables
   >(RunPluginOperationDocument, options);

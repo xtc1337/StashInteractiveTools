@@ -14,7 +14,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react"
+    "jsx": "react",
+    "strictFunctionTypes": false,
+    "typeRoots": [
+      "./node_modules/@types",
+      "../stash-pluginapi-types-generator/dist"
+    ]
   },
   "include": ["src"]
 }

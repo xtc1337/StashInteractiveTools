@@ -2,11 +2,8 @@ import React, { Dispatch, SetStateAction } from 'react';
 import localForage from 'localforage';
 import isEqual from 'lodash-es/isEqual';
 import { SlideInfo } from 'thehandy/src/types';
-import {
-  ConfigurationQueryHookResult,
-  ConfigureInterfaceMutationHookResult,
-} from './generated-graphql';
-import { GQL, hooks, utils } from './api';
+
+import { GQL, hooks, utils } from '../api';
 
 interface ILocalForage<T> {
   data: T;
@@ -86,10 +83,10 @@ export const useStashToolsConfig = (): [
   Dispatch<SetStateAction<StashToolsConfig>>,
 ] => {
   const { interactive, initialised } = hooks.useInteractive();
-  const { data: stashConfig }: ConfigurationQueryHookResult =
-    GQL.useConfigurationQuery();
+  const { data: stashConfig } = GQL.useConfigurationQuery();
+
   const [completed, setCompleted] = React.useState(false);
-  const [configurInterfaceMutation]: ConfigureInterfaceMutationHookResult =
+  const [configurInterfaceMutation] =
     utils.StashService.useConfigureInterface();
 
   const [{ data, error }, setConfig] = useLocalForage<StashToolsConfig>(
@@ -119,7 +116,7 @@ export const useStashToolsConfig = (): [
       const pluginConfig =
         stashConfig?.configuration.plugins['StashInteractiveTools'];
       const alwaysDefaultToStashSyncOffset =
-        (pluginConfig.alwaysDefaultToStashSyncOffset as boolean) ?? false;
+        (pluginConfig?.alwaysDefaultToStashSyncOffset as boolean) ?? false;
       setConfig({
         ...data,
         ready: true,

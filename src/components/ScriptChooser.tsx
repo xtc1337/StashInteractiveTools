@@ -1,5 +1,5 @@
-import { ChangeEventHandler, useCallback, useState } from 'react';
-import { libraries, React } from './api';
+import React, { ChangeEventHandler, useCallback, useState } from 'react';
+import { libraries } from '../api';
 
 const fullWidthProps = {
   labelProps: {
@@ -22,17 +22,11 @@ type Props = {
   value: string;
   defaultScript: string;
   onChange: (script: string) => Promise<void> | void;
-  defaultComponent: React.JSX.Element;
+
   options: Script[];
 };
 
-const Funscripts = ({
-  value,
-  onChange,
-  options,
-  defaultScript,
-  defaultComponent,
-}: Props) => {
+const ScriptChooser = ({ value, onChange, options, defaultScript }: Props) => {
   const [selected, setSelected] = useState(value || defaultScript);
   const onInternalChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
     async (e) => {
@@ -57,7 +51,6 @@ const Funscripts = ({
             className="input-control"
             {...fullWidthProps.fieldProps}
             value={selected}
-            defaultValue={selected}
             onChange={onInternalChange}
           >
             {options.map((entry) => (
@@ -69,8 +62,6 @@ const Funscripts = ({
         </Col>
       </Row>
     </>
-  ) : (
-    defaultComponent
-  );
+  ) : null;
 };
-export default Funscripts;
+export default ScriptChooser;

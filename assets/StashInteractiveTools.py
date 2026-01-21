@@ -4,7 +4,9 @@ from config import get_config
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+current_path = Path(__file__).resolve()
+sys.path.insert(0, str(current_path.parent))
+sys.path.insert(0, str(current_path.parent/"automatic_dependencies"))
 
 def main():
     config = get_config()

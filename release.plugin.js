@@ -18,7 +18,7 @@ const CONFIGS = {
         'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
     },
     main: {
-      assets: ['./stash.yml'],
+      assets: ['./stash.yml', './CHANGELOG.md'],
     },
     next: {
       assets: ['./stash-next.yml'],
@@ -95,9 +95,7 @@ const zipPlugin = {
   prepare: async (pluginConfig, context) => {
     const { cwd, nextRelease, options, logger } = context;
     const stashFiles =
-      context.branch.name === 'main'
-        ? ['stash.yml']
-        : ['stash.yml', 'stash-next.yml'];
+      context.branch.name === 'main' ? ['stash.yml'] : ['stash-next.yml'];
 
     const zipFile = path.resolve(cwd, 'dist', 'StashInteractiveTools.zip');
 

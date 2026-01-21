@@ -1,11 +1,15 @@
-import { ChangeEventHandler, useCallback, useEffect, useState } from 'react';
+import React, {
+  ChangeEventHandler,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { SlideInfo } from 'thehandy/src/types';
-import { useStashToolsConfig } from './useLocalForage';
+import { useStashToolsConfig } from '../hooks';
 import { useDebouncedCallback } from 'use-debounce';
+import { Form } from 'react-bootstrap';
 
-import { hooks, libraries, React } from './api';
-
-const { Form } = libraries.Bootstrap;
+import { hooks } from '../api';
 
 const StrokeSlider = () => {
   const { interactive, initialised } = hooks.useInteractive();

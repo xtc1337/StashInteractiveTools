@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import strip from '@rollup/plugin-strip';
 import semanticRelease from 'semantic-release';
+import replace from '@rollup/plugin-replace';
 import YAML from 'yaml';
 
 import 'dotenv/config';
@@ -87,7 +88,9 @@ function emitAssetsPlugin(assetsDir) {
 const prod = process.env.NODE_ENV === 'production';
 const plugins = [
   peerDepsExternal(),
-  resolve(),
+  resolve({
+    browser: true,
+  }),
   commonjs(),
   typescript({ tsconfig: './tsconfig.json' }),
   terser(),
@@ -110,6 +113,13 @@ const plugins = [
     fileName: 'index.css',
   }), //
   emitAssetsPlugin('assets'),
+  replace({
+    preventAssignment: true,
+    'process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || 'development',
+    ),
+    'process.env.DEBUG': JSON.stringify(!prod),
+  }),
 ];
 
 if (prod) {
@@ -125,23 +135,46 @@ export default [
     output: [
       {
         banner: `window.require = function (name) {
-  if (name === "react") return window.PluginApi.React;
-  if(name ==='global/window') return window;
-  if(name ==='global/document') return window.document;
-  if(name ==='video.js') return window.PluginApi.libraries.videojs;
+        return {
+             'global/window':window,
+            'global/document':window.document,
+           "react":window.PluginApi.React,
+           "react-dom":window.PluginApi.ReactDOM,
+           "thehandy":window.PluginApi.libraries.TheHandy,
+           "video.js":window.PluginApi.libraries.videojs,
+           "react-bootstrap":window.PluginApi.libraries.Bootstrap,
+           "react-intl": window.PluginApi.libraries.Intl,
+           '@apollo/client':window.PluginApi.libraries.Apollo,           
+           '@fortawesome/free-regular-svg-icons':window.PluginApi.libraries.FontAwesomeRegular,
+           '@fortawesome/free-solid-svg-icons':window.PluginApi.libraries.FontAwesomeSolid,
+           
+        }[name];
+  
 };
 `,
         //file: packageJson.main,
         dir: './dist',
         format: 'cjs',
         sourcemap: !prod,
+
         sourcemapBaseUrl: !prod
           ? 'http://localhost:9999/plugin/StashInteractiveTools/assets/'
           : '',
       },
     ],
+    context: 'globalThis',
     plugins,
 
-    external: ['react', 'react-dom', 'thehandy', 'video.js'],
+    external: [
+      'react',
+      'react-dom',
+      'thehandy',
+      'video.js',
+      'react-bootstrap',
+      'react-intl',
+      '@apollo/client',
+      '@fortawesome/free-regular-svg-icons',
+      '@fortawesome/free-solid-svg-icons',
+    ],
   },
 ];
