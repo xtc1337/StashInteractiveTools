@@ -1,3 +1,25 @@
+## [1.1.0](github.com/xtc1337/StashInteractiveTools/compare/v1.0.0...v1.1.0) (2026-01-21)
+
+* modify script component ([13ebb8b](github.com/xtc1337/StashInteractiveTools/commit/13ebb8beed3f068e9a0eff499b4e595879ffbae3))
+
+### Features
+
+* adding ivdb.io support ([#10](github.com/xtc1337/StashInteractiveTools/issues/10)) ([14b77bb](github.com/xtc1337/StashInteractiveTools/commit/14b77bbd1c2b49c21aef88a9c48e7fdbfeae4094))
+* adding saving of modifier presets and editing ([b40870c](github.com/xtc1337/StashInteractiveTools/commit/b40870cf4d5cf37fb1b417d7e6eb16c07ff4fa72))
+* adding script modifiers ([d16f91c](github.com/xtc1337/StashInteractiveTools/commit/d16f91c6ffb6bd97bac2aff288a4dd390a4b596a))
+* adding setup to support to ive-connect ([90fcffa](github.com/xtc1337/StashInteractiveTools/commit/90fcffa412d90c4a2a86baf686ab26f4440c9ef5))
+* funscript 're'heatmapping ([#11](github.com/xtc1337/StashInteractiveTools/issues/11)) ([11d4d27](github.com/xtc1337/StashInteractiveTools/commit/11d4d279e989ab96dbe6bd2a45e087ae09f6bb54))
+* move tools to their own tab ([4520597](github.com/xtc1337/StashInteractiveTools/commit/4520597f0edef6086254c690f9b321830bb0bed6))
+
+### Bug Fixes
+
+* adding local funscript support ([2af2f4a](github.com/xtc1337/StashInteractiveTools/commit/2af2f4a2e7d5997c4cd419edb80183f22e569fe7))
+* saving of modifiers ([9ee8b02](github.com/xtc1337/StashInteractiveTools/commit/9ee8b02cb6e005a195cfeea31aa4934959bc6fb1))
+* script playing logic ([0543e06](github.com/xtc1337/StashInteractiveTools/commit/0543e06041a208a9a9334a682f19e6613391cc86))
+* script routing ([0188311](github.com/xtc1337/StashInteractiveTools/commit/0188311101325b4f73b7c0a9ec6bac35bcf14fa1))
+* script uploading ([160eead](github.com/xtc1337/StashInteractiveTools/commit/160eead191c560387408863614f89e8ebadf2675))
+* some rte errors ([3e589c5](github.com/xtc1337/StashInteractiveTools/commit/3e589c56cf2155c4825cde55f31b79b0f836d355))
+
 ## 1.0.0 (2025-06-10)
 
 - tasks into their own file with progress bars ([6ab8a13](github.com/blackx69/StashInteractiveTools/commit/6ab8a13aa23206b8fa8f7a7d4236442d0cab58ba))
