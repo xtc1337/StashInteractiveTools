@@ -1,6 +1,18 @@
 # Stash Interactive Tools
 
-Current features:
+# To Install
+
+- Stash GUI>Settings>Plugins>Available Plugins>Add Source (green button)
+- File the following fields.
+  - Name: StashInteractiveTools
+  - Source URL: https://raw.githubusercontent.com/xtc1337/StashInteractiveTools/refs/heads/next/stash-next.yml
+- Stash GUI>Settings>Plugins>Available Plugins>Tick box for "Stash Interactive Tools (next)">Blue install button (this will install any missing dependencies)
+
+- That's it!
+
+If you run into any issues, you can reach out on https://discuss.eroscripts.com/t/stashapp-stash-vr-enhancements-stashinteractivetools or @xtc on the #funscript-and-handy channel on the Stash discord
+
+# Current features:
 
 - Adds ability to change sync offset
 - Adds ability to change the stroke length
