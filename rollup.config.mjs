@@ -32,7 +32,28 @@ function updateMetadataVersionPlugin() {
     name: 'update-metadata-version-plugin',
     async buildEnd() {
       const results = await semanticRelease(
-        { dryRun: true },
+        {
+          dryRun: false,
+
+          branches: [
+            { name: 'main' },
+            { name: 'next', prerelease: true },
+            { name: 'alpha', prerelease: true },
+          ],
+          plugins: [
+            [
+              '@semantic-release/commit-analyzer',
+              {
+                preset: 'conventionalcommits',
+                releaseRules: [
+                  { type: 'docs', scope: 'README', release: 'patch' },
+                  { type: 'refactor', release: 'patch' },
+                  { type: 'style', release: 'patch' },
+                ],
+              },
+            ],
+          ],
+        },
         {
           stdout: nullWriteStream,
           error: nullWriteStream,
