@@ -9,11 +9,15 @@ import {
   HapticDevice,
   ScriptData,
 } from 'ive-connect';
-import { ConnectionState } from 'ive-connect/dist/core/device-interface';
+import { ConnectionState } from 'ive-connect';
 import { Any, InteractiveAPI } from '../../api';
 
-import Handy, { HandyFirmwareStatus } from 'thehandy';
-
+import Handy from 'thehandy';
+export enum HandyFirmwareStatus {
+  upToDate = 0,
+  updateRequired = 1,
+  updateAvailable = 2,
+}
 type Config = HandySettings;
 
 const DEFAULT_CONFIG: Config = {
@@ -68,17 +72,18 @@ export class DefaultHandyClient implements HapticDevice {
     return this._isPlaying;
   }
   async connect(config?: Config) {
-    this._config = config ?? { ...DEFAULT_CONFIG };
+    this._config = { ...DEFAULT_CONFIG, ...this._config, ...config };
     this._handy.connectionKey = this._config.connectionKey;
     const connected = await this._handy.getConnected();
     if (!connected) {
       throw new Error('Handy not connected');
     }
     const info = await this._handy.getInfo();
+    console.log('info', info);
     if (info.fwStatus === HandyFirmwareStatus.updateRequired) {
       throw new Error('Handy firmware update required');
     }
-    const offset = await this._handy.getHsspOffset();
+    const offset = await this._handy.getHstpOffset();
     const slideInfo = await this._handy.getSlideSettings();
     this._config = {
       ...this._config,
@@ -122,10 +127,7 @@ export class DefaultHandyClient implements HapticDevice {
       this._config.stroke = stroke;
     }
     if (offset !== undefined) {
-      const h = this._handy as {
-        setHstpOffset: (v: number) => Promise<unknown>;
-      };
-      await h.setHstpOffset(offset);
+      await this._handy.setHstpoffset(offset);
       this._config.offset = offset;
     }
     return true;
@@ -176,7 +178,9 @@ export class DefaultHandyClient implements HapticDevice {
     if (!this.isConnected) {
       return true;
     }
-    this._isPlaying = await this._handy.setHsspStop().then(() => false);
+    if (this._isPlaying) {
+      this._isPlaying = await this._handy.setHsspStop().then(() => false);
+    }
     return true;
   }
   syncTime(_timeMs: number, _filter?: number): Promise<boolean> {

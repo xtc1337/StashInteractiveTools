@@ -126,6 +126,7 @@ def analyze_scene():
        interactive
 		urls
         files{
+         id
           path
         }
 		"""
@@ -135,7 +136,14 @@ def analyze_scene():
     if scene['interactive']:
         scripts.extend(analyze_file(scene['files'][0]['path'], scene_id))
     ivdb_url = find_single_element(scene['urls'], 'ivdb.io/#/videos/')
+    if not scene['interactive'] and ivdb_url:
+        sql = f"UPDATE video_files SET interactive_speed = 1 , interactive = 1  WHERE file_id = {scene['files'][0]['id']}"
+        config.log.info(sql)
+        results = config.stash.sql_query(sql)
+        config.log.info(results)
+
     if ivdb_url and config.HANDY_TOKEN:
+
         ivdb_script = lookup_ivdb_script(ivdb_url, config.HANDY_TOKEN)
         if ivdb_script:
             scripts.append(ivdb_script)

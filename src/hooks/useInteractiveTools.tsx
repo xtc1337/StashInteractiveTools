@@ -22,7 +22,7 @@ import {
   generateHeatmap,
   getFunscript,
   HapticInterface,
-  isIvdbScene,
+  isIvdbTokenUrl,
   replaceHeatMap,
   SITPluginConfig,
   usePatchedInteractiveApi,
@@ -188,13 +188,15 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     hooks: currentHooks,
     cache: {} as Record<string, Any>,
   });
+  if (interactiveState.current.id != scene.id) {
+    interactiveState.current.id = scene.id;
+    interactiveState.current.ivdb = false;
+    interactiveState.current.script = null;
+    interactiveState.current.blobUrl = null;
+  }
 
   interactiveState.current.hooks = currentHooks;
 
-  interactiveState.current.ivdb =
-    (scene.id === interactiveState.current.id &&
-      interactiveState.current.ivdb) ||
-    isIvdbScene(scene);
   interactiveState.current.config = sitPluginConfig;
 
   usePatchedInteractiveApi(interactive, interactiveState);
@@ -275,6 +277,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
             },
           }),
         },
+
         variables: {
           id: scene.id,
         },
@@ -328,6 +331,8 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       const scriptUrl = currentPaths.src !== url ? url : currentPaths.src;
       const script = await getFunscript(scriptUrl);
       unmodifiedScript.current = script;
+      interactiveState.current.blobUrl = null;
+      interactiveState.current.ivdb = isIvdbTokenUrl(scriptUrl);
       interactiveState.current.script = script;
       await runScriptPipeline(script, scriptUrl);
     },
@@ -338,14 +343,6 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     const ivdb = interactiveState.current.ivdb;
     if (!ivdb && scene.paths.interactive_heatmap) {
       replaceHeatMap(scene.paths.interactive_heatmap);
-    }
-    if (scene.paths.funscript && !unmodifiedScript.current && !ivdb) {
-      const script = getFunscript(scene.paths.funscript);
-      script.then((s) => {
-        interactiveState.current.script = s;
-        unmodifiedScript.current = s;
-        return updateScript(s);
-      });
     }
   }, [scene, updateScript]);
 
@@ -368,8 +365,6 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   useEffect(() => {
     const scripts = data?.runPluginOperation?.scripts ?? [];
 
-    const shouldUseIVDB =
-      interactiveState.current.ivdb && interactiveState.current.id !== id;
     function setup() {
       DB.getAll('presets').then((records) => {
         updatePresets(records);
@@ -380,14 +375,17 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       setup();
     }
 
-    if (shouldUseIVDB && scripts.length == 1) {
-      interactiveState.current.id = id;
-
-      runScriptPipeline(null, scripts[0].path).catch(console.error);
-    } else {
+    if (scripts.length) {
       setEntries(scripts);
     }
-  }, [data, runScriptPipeline, id]);
+    if (scripts.length && entries != scripts) {
+      interactiveState.current.id = id;
+      interactiveState.current.ivdb = false;
+      interactiveState.current.script = null;
+      interactiveState.current.blobUrl = null;
+      onChange(scripts[0].path).catch(console.error);
+    }
+  }, [data, runScriptPipeline, id, onChange, entries]);
 
   const savePresetInternal = useCallback(
     (updatedPreset: ModifierPreset | null, toDelete = false) => {

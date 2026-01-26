@@ -43,7 +43,7 @@ module.exports = {
     ['./release.plugin.js'],
 
     [
-      './github.plugin.js',
+      './github.plugin.mjs',
       {
         assets: [{ path: './dist/StashInteractiveTools-*.zip' }],
       },

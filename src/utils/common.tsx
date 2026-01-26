@@ -88,6 +88,9 @@ export function findComponentByPath(
   return current;
 }
 
+export function isIvdbTokenUrl(url: string) {
+  return url.includes('/token/download');
+}
 export function isIvdbScene(scene: SceneDataFragment) {
   return scene.urls.some((u) => u.includes('ivdb.io/#/videos/'));
 }
