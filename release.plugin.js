@@ -7,6 +7,11 @@ const {
   unlinkSync,
 } = require('fs-extra');
 const { createHash } = require('crypto');
+const STASH_FILES = {
+  main: ['stash.yml'],
+  next: ['stash-next.yml'],
+  alpha: ['stash-alpha.yml'],
+};
 
 const CONFIGS = {
   '@semantic-release/changelog': {
@@ -102,8 +107,7 @@ async function getFileSha256(filePath) {
 const zipPlugin = {
   prepare: async (pluginConfig, context) => {
     const { cwd, nextRelease, options, logger } = context;
-    const stashFiles =
-      context.branch.name === 'main' ? ['stash.yml'] : ['stash-next.yml'];
+    const stashFiles = STASH_FILES[context.branch.name];
 
     const zipFile = path.resolve(cwd, 'dist', 'StashInteractiveTools.zip');
 
