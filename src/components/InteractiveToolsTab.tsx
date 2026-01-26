@@ -33,6 +33,7 @@ const InteractiveToolsContent = () => {
   );
 };
 export const InteractiveToolsTab = (props: Props) => {
+  console.log(`InteractiveToolsTab interactive=${props.scene.interactive}`);
   return (
     <InteractiveToolsProvider scene={props.scene}>
       <InteractiveToolsContent />
