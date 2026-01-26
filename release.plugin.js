@@ -11,6 +11,7 @@ const { createHash } = require('crypto');
 const CONFIGS = {
   '@semantic-release/changelog': {
     next: false,
+    alpha: false,
   },
   '@semantic-release/git': {
     common: {
@@ -22,6 +23,9 @@ const CONFIGS = {
     },
     next: {
       assets: ['./stash-next.yml'],
+    },
+    alpha: {
+      assets: ['./stash-alpha.yml'],
     },
   },
 };
