@@ -992,6 +992,10 @@ declare namespace PluginApi {
     const ReactRouterDOM: typeof import('react-router-dom');
   }
   namespace loadableComponents {
+    const StringSetting: any;
+    const BooleanSetting: any;
+    const NumberSetting: any;
+    const SelectSetting: any;
     interface ISceneCardProps {
       scene: any;
       containerWidth?: number;
@@ -1076,7 +1080,9 @@ declare namespace PluginApi {
     SceneFileInfoPanel: Rect.FC<any>;
     SettingModel: <T>(props: ISettingModal<T>) => React.ReactNode;
   };
+
   namespace utils {
+    const InteractiveUtils = any;
     namespace NavUtils {
       function makePerformerScenesUrl(...args: any[]): any;
 
@@ -1567,6 +1573,7 @@ declare namespace PluginApi {
     type AsyncVoid = Promise<void>;
 
     import type Handy from 'thehandy';
+    import type { DeviceSettings } from 'ive-connect';
     export type InteractiveAPI = {
       _connected: boolean;
       _playing: boolean;
@@ -1576,6 +1583,8 @@ declare namespace PluginApi {
       connect(): Promise<void>;
       set handyKey(key: string);
       get handyKey(): string;
+      get connected(): boolean;
+      get playing(): boolean;
       set useStashHostedFunscript(useStashHostedFunscript: boolean);
       get useStashHostedFunscript(): boolean;
       set scriptOffset(offset: number);
@@ -1586,6 +1595,7 @@ declare namespace PluginApi {
       pause(): Promise<void>;
       ensurePlaying(position: number): AsyncVoid;
       setLooping(looping: boolean): AsyncVoid;
+      configure(config: Partial<DeviceSettings>);
     };
 
     function useInteractive(): {
@@ -1601,6 +1611,10 @@ declare namespace PluginApi {
     };
   }
   export type ComponentNames = keyof typeof components | string;
+  export type PatchBeforeFunction<T extends any = any> = (
+    props: PropsWithChildren<T>,
+    ...args: any[]
+  ) => any;
   export type PatchFunction<T extends any = any> = (
     props: PropsWithChildren<T>,
     ...args: any[]
@@ -1608,7 +1622,7 @@ declare namespace PluginApi {
   namespace patch {
     function before<T extends any = any>(
       target: ComponentNames,
-      fn: PatchFunction<T>,
+      fn: PatchBeforeFunction<T>,
     ): void;
 
     function instead<T extends any = any>(

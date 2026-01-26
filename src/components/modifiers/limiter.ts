@@ -1,6 +1,7 @@
 import { FunTweaker } from 'funscript-utils';
 
 import { createModifierDef, createOptions, dropdown, input } from './utils';
+import { Funscript } from 'ive-connect';
 
 const options = createOptions([
   dropdown('devicePreset', 'handy', 'Device Mode', [
@@ -28,6 +29,6 @@ export const limiterModifierDef = createModifierDef({
   apply: (script, ctx) => {
     const value =
       ctx.devicePreset === 'custom' ? ctx.maxSpeed : ctx.devicePreset;
-    return FunTweaker.getLimitedScript(script, value);
+    return FunTweaker.getLimitedScript(script, value) as Funscript;
   },
 });

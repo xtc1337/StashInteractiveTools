@@ -19,6 +19,7 @@ export type Script = {
   path: string;
 };
 type Props = {
+  disabled: boolean;
   value: string;
   defaultScript: string;
   onChange: (script: string) => Promise<void> | void;
@@ -26,7 +27,13 @@ type Props = {
   options: Script[];
 };
 
-const ScriptChooser = ({ value, onChange, options, defaultScript }: Props) => {
+const ScriptChooser = ({
+  disabled,
+  value,
+  onChange,
+  options,
+  defaultScript,
+}: Props) => {
   const [selected, setSelected] = useState(value || defaultScript);
   const onInternalChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
     async (e) => {
@@ -48,6 +55,7 @@ const ScriptChooser = ({ value, onChange, options, defaultScript }: Props) => {
           <Form.Control
             as="select"
             id="stash-interactive-tools-select-funscripts"
+            disabled={disabled}
             className="input-control"
             {...fullWidthProps.fieldProps}
             value={selected}

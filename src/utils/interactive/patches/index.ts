@@ -1,5 +1,6 @@
 import { uploadScriptPatcher } from './uploadScript.patch';
 import {
+  configurePatcher,
   connectPatcher,
   ensurePlayingPatcher,
   pausePatcher,
@@ -10,10 +11,11 @@ import {
 
 export const DEFAULT_PATCHES = [
   uploadScriptPatcher,
-  connectPatcher,
   scriptOffsetPatcher,
   pausePatcher,
   syncPatcher,
   ensurePlayingPatcher,
   playPatcher,
+  configurePatcher,
+  connectPatcher,
 ];

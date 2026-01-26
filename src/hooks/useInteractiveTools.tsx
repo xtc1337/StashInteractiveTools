@@ -1,4 +1,4 @@
-import { Any, GQL } from '../api';
+import { Any, GQL, InteractiveAPI } from '../api';
 import {
   SceneDataFragment,
   useRunPluginOperationMutation,
@@ -6,6 +6,7 @@ import {
 import { useApolloClient } from '@apollo/client';
 import React, {
   Dispatch,
+  MutableRefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -15,16 +16,19 @@ import React, {
 import { Script } from '../components';
 import {
   AnySITHook,
+  ConnectionState,
   deepMerge,
   enableHandyTokens,
   generateHeatmap,
   getFunscript,
+  HapticInterface,
   isIvdbScene,
   replaceHeatMap,
   SITPluginConfig,
   usePatchedInteractiveApi,
+  useResumeInteractive,
 } from '../utils';
-import { Funscript } from 'funscript-utils/lib/types';
+
 import { AnyModifierDef, ModifierPreset } from '../components/modifiers';
 import {
   MODIFICATION_PIPELINE_ID,
@@ -32,6 +36,7 @@ import {
 } from '../components/modifiers/pipeline';
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
 import { DefaultHandyClient } from '../utils/interactive/client';
+import { Funscript, HandyDevice, HapticDevice } from 'ive-connect';
 import useInteractive = PluginApi.hooks.useInteractive;
 
 async function applyScriptChanges(url: string, script: Funscript) {
@@ -54,12 +59,14 @@ export type InteractiveContext = {
   scene: SceneDataFragment;
   currentPaths: ScenePaths;
   defaultPaths: ScenePaths;
+  state: ConnectionState;
   entries: Script[];
   onChange: (script: string) => Promise<void>;
   db: IndexedDBWrapper<DBSchema>;
   preset: ModifierPreset | null;
   presets: ModifierPreset[];
   setPreset: (preset: ModifierPreset | null, toDelete?: boolean) => void;
+  device: MutableRefObject<HapticDevice | undefined>;
   addPipeline<T extends ScriptPipeline>(
     pipeline: T,
     update: true,
@@ -111,6 +118,48 @@ export async function resolveScriptPipeline(
   );
 }
 
+const DEFAULT_SIT_PLUGIN_CONFIG: SITPluginConfig = {
+  alwaysDefaultToStashSyncOffset: false,
+  handleHandyFileTokens: true,
+  hapticInterface: HapticInterface.HANDY_DEFAULT,
+};
+
+type HapticDeviceBuilder = (
+  interactive: InteractiveAPI,
+  config: SITPluginConfig,
+) => HapticDevice;
+
+const DEFAULT_CLIENT_BUILDER: HapticDeviceBuilder = (interactive) =>
+  new DefaultHandyClient(
+    interactive._handy,
+    interactive.handyKey,
+    interactive.scriptOffset,
+  );
+const clientBuilders: Record<HapticInterface, HapticDeviceBuilder> = {
+  [HapticInterface.HANDY_DEFAULT]: DEFAULT_CLIENT_BUILDER,
+  [HapticInterface.HANDY_FW4]: (i) =>
+    new HandyDevice({
+      applicationId: process.env.HANDY_APPLICATION_ID,
+      connectionKey: i.handyKey,
+    }),
+  [HapticInterface.HANDY_FW4_BLUETOOTH]: DEFAULT_CLIENT_BUILDER,
+};
+
+function getInteractiveDevice(
+  interactive: InteractiveAPI,
+  config: SITPluginConfig,
+  device: MutableRefObject<HapticDevice | undefined>,
+): HapticDevice {
+  const hapticInterface =
+    config.hapticInterface || HapticInterface.HANDY_DEFAULT;
+  const builder = clientBuilders[hapticInterface];
+  if (device.current?.id !== hapticInterface) {
+    device.current?.disconnect();
+    return builder(interactive, config);
+  }
+  return device.current;
+}
+
 export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [entries, setEntries] = useState<Script[]>([]);
 
@@ -120,27 +169,21 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const { data: stashConfig } = GQL.useConfigurationQuery();
 
   const [currentHooks, setHooks] = useState([enableHandyTokens]);
-  const sitPluginConfig = stashConfig?.configuration?.plugins?.[
-    'StashInteractiveTools'
-  ] as SITPluginConfig | undefined;
 
-  const { interactive } = useInteractive();
+  const sitPluginConfig =
+    stashConfig?.configuration?.plugins?.['StashInteractiveTools'] ||
+    DEFAULT_SIT_PLUGIN_CONFIG;
+  const { interactive, state } = useInteractive();
 
-  const device = useRef<DefaultHandyClient>();
-  if (!device.current) {
-    device.current = new DefaultHandyClient(
-      interactive._handy,
-      interactive.handyKey,
-      interactive.scriptOffset,
-    );
-  }
+  const device = useRef<HapticDevice>();
+  device.current = getInteractiveDevice(interactive, sitPluginConfig, device);
 
   const interactiveState = useRef({
     id: '',
     ivdb: false,
     script: null as Funscript | null,
     blobUrl: null as string | null,
-    config: sitPluginConfig || ({} as SITPluginConfig),
+    config: sitPluginConfig,
     device: device.current,
     hooks: currentHooks,
     cache: {} as Record<string, Any>,
@@ -152,8 +195,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     (scene.id === interactiveState.current.id &&
       interactiveState.current.ivdb) ||
     isIvdbScene(scene);
-  interactiveState.current.config =
-    sitPluginConfig || interactiveState.current.config;
+  interactiveState.current.config = sitPluginConfig;
 
   usePatchedInteractiveApi(interactive, interactiveState);
 
@@ -208,6 +250,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
         );
 
         changes = await applyScriptChanges(url, pipe.script);
+        interactiveState.current.script = pipe.script;
       } else {
         return;
       }
@@ -380,8 +423,11 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     [setPreset, updatePresets],
   );
 
+  useResumeInteractive(interactive, interactiveState);
+
   const contextValue = useMemo(
     () => ({
+      state,
       entries,
       onChange,
       currentPaths,
@@ -394,13 +440,14 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       preset,
       presets,
       setPreset: savePresetInternal,
-
+      device: device,
       getPipeline,
       updateScript,
       updateModifiers,
       setHooks,
     }),
     [
+      state,
       entries,
       onChange,
       currentPaths,

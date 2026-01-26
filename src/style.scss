@@ -6,6 +6,7 @@
     position: relative;
     width: 100%;
     height: 35px;
+
     text-align: center;
 
     div.range-slider-wrapper {
@@ -33,6 +34,7 @@
       margin: 0;
       padding: 0;
       box-shadow: none;
+      background-color: transparent !important;
     }
 
     input::-webkit-slider-thumb {

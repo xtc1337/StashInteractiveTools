@@ -3,7 +3,11 @@ require('dotenv').config();
  * @type {import('semantic-release').GlobalConfig}
  */
 module.exports = {
-  branches: ['main', { name: 'next', prerelease: true }],
+  branches: [
+    'main',
+    { name: 'next', prerelease: true },
+    { name: 'alpha', prerelease: true },
+  ],
   plugins: [
     [
       '@semantic-release/commit-analyzer',
@@ -39,7 +43,7 @@ module.exports = {
     ['./release.plugin.js'],
 
     [
-      '@semantic-release/github',
+      './github.plugin.js',
       {
         assets: [{ path: './dist/StashInteractiveTools-*.zip' }],
       },

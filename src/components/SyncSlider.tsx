@@ -1,27 +1,31 @@
 import React, { ChangeEvent } from 'react';
 import { libraries } from '../api';
 import Slider, { SliderContext, SliderOnSetup } from './Slider';
+import { HapticInterface } from '../utils';
 
 const { Form } = libraries.Bootstrap;
 
 const onCommit = async (ctx: SliderContext<number>, nextValue?: number) => {
   let finalOffset = nextValue ?? -1;
-  const hstpOffset = await ctx.interactive._handy.getHstpOffset();
+  const device = ctx.device.current!;
+  console.log(device.getConfig(), finalOffset);
 
-  if (finalOffset == -1) {
+  const hstpOffset = Number(device.getConfig().offset || 0);
+
+  if (finalOffset == -1 && !isNaN(hstpOffset)) {
     // reloaded first time ran
     finalOffset = hstpOffset;
   }
 
-  const h = ctx.interactive._handy as {
-    setHstpOffset: (v: number) => Promise<unknown>;
-  };
-  await h.setHstpOffset(finalOffset);
+  await device.updateConfig({
+    offset: finalOffset,
+  });
   return [finalOffset, !ctx.config.alwaysDefaultToStashSyncOffset] as [
     number,
     boolean,
   ];
 };
+
 const onAfterCommit = (ctx: SliderContext<number>) => {
   return ctx.withPlayer(async () => {
     if (ctx.interactive._playing) {
@@ -32,19 +36,27 @@ const onAfterCommit = (ctx: SliderContext<number>) => {
 const onChange = (event: ChangeEvent<HTMLInputElement>) =>
   parseInt(event.target.value, 10);
 const onSetup: SliderOnSetup<number> = async (ctx, setValue) => {
+  const device = ctx.device.current!;
+  const isDefault = device.id === HapticInterface.HANDY_DEFAULT;
   const hstpOffset = ctx.config.alwaysDefaultToStashSyncOffset
     ? ctx.config.stashSyncOffset
-    : await ctx.interactive._handy.getHstpOffset();
+    : Number(device.getConfig().offset || 0);
 
   setValue(hstpOffset);
-  const syncInterval = setInterval(async () => {
-    ctx.interactive.setServerTimeOffset(
-      await ctx.interactive._handy.getServerTimeOffset(10),
-    );
-  }, 60 * 1000);
-  return () => {
-    clearInterval(syncInterval);
-  };
+  if (isDefault) {
+    const syncInterval = setInterval(async () => {
+      ctx.interactive.setServerTimeOffset(
+        await ctx.interactive._handy.getServerTimeOffset(10),
+      );
+    }, 60 * 1000);
+    return () => {
+      clearInterval(syncInterval);
+    };
+  }
+  await device.updateConfig({
+    offset: hstpOffset || 0,
+  });
+  return () => {};
 };
 const SyncSlider = () => {
   return (

@@ -14,8 +14,10 @@ import {
   SITHookPayload,
   SITHookPayloadReturn,
 } from './interactive';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { DEFAULT_PATCHES } from './interactive/patches';
+import { InteractiveClient } from './interactive/client-provider';
+import { DeviceSettings } from 'ive-connect';
 
 const DEFAULT_SHOULD_PATCH_CHECKER = <M extends PatchableMethodName>(
   method: PatchedMethod<M>,
@@ -143,4 +145,33 @@ export function usePatchedInteractiveApi(
   DEFAULT_PATCHES.forEach((patcher) => {
     patchMethod(ctx.current, patcher, dispatchHooks);
   });
+}
+
+const logger = createDebugConsole('interactive-api-patcher');
+export function useResumeInteractive(
+  api: InteractiveAPI,
+  state: InteractiveState,
+) {
+  const client = api as InteractiveClient;
+  const { device } = state.current;
+
+  useEffect(() => {
+    if (client.deferred) {
+      client
+        .resume('configure', async (m) => {
+          logger.debug('configure resuming');
+
+          const config = m.args[0] as Partial<DeviceSettings>;
+          if (config.connectionKey) {
+            client.handyKey = String(config.connectionKey);
+          }
+          logger.debug('connecting to device for configure');
+          await device.updateConfig(config);
+          setTimeout(() => m._resolve(), 1000);
+        })
+        .finally(() => {
+          logger.debug('configure resumed');
+        });
+    }
+  }, [client, device]);
 }

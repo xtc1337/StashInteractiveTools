@@ -1,8 +1,18 @@
 import { Any, InteractiveAPI } from '../../api';
 import { MutableRefObject } from 'react';
 import { createDebugConsole } from '../common';
-import { Funscript } from 'funscript-utils/lib/types';
-import { HapticDevice } from 'ive-connect';
+
+import { Funscript, HapticDevice } from 'ive-connect';
+
+export enum ConnectionState {
+  Missing,
+  Disconnected,
+  Error,
+  Connecting,
+  Syncing,
+  Uploading,
+  Ready,
+}
 
 export enum SITHookEvent {
   RESOLVE_FUNSCRIPT_PATH = 'resolve.funscript.path',
@@ -39,9 +49,15 @@ export type SITHook<T extends SITHookEvent> = {
 };
 export type AnySITHook = SITHook<SITHookEvent>;
 
+export enum HapticInterface {
+  HANDY_DEFAULT = 'default',
+  HANDY_FW4 = 'handy',
+  HANDY_FW4_BLUETOOTH = 'buttplug',
+}
 export type SITPluginConfig = {
   alwaysDefaultToStashSyncOffset: boolean;
   handleHandyFileTokens: boolean;
+  hapticInterface: HapticInterface;
 };
 export type InteractiveState = MutableRefObject<{
   id: string;
@@ -85,6 +101,16 @@ export type MethodPatcher<M extends PatchableMethodName> = {
   name: M;
   patch: MethodPatch<M>;
 };
+
+export type InteractiveAPIDeferredMethod<M extends PatchableMethodName> = {
+  _resolve: () => Promise<void>;
+  _reject: () => void;
+  args: Parameters<InteractiveAPI[M]>;
+};
+export type DeferredInteractiveAPI<M extends PatchableMethodName> =
+  InteractiveAPI & {
+    [K in `__${M}`]: InteractiveAPIDeferredMethod<M>;
+  };
 
 export const withPatcher = <M extends PatchableMethodName>(
   name: M,

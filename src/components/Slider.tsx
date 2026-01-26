@@ -1,16 +1,22 @@
-import {
+import React, {
   ChangeEvent,
   ChangeEventHandler,
   EffectCallback,
+  MutableRefObject,
   useCallback,
   useEffect,
   useState,
 } from 'react';
 import videojs from 'video.js';
 import { useDebouncedCallback } from 'use-debounce';
-import { StashToolsConfig, useStashToolsConfig } from '../hooks';
-import React from 'react';
+import {
+  StashToolsConfig,
+  useInteractiveTools,
+  useStashToolsConfig,
+} from '../hooks';
 import { hooks } from '../api';
+import { HapticDevice } from 'ive-connect';
+import { HapticInterface } from '../utils';
 import InteractiveAPI = PluginApi.hooks.InteractiveAPI;
 
 type PlayerElement = { player?: videojs.Player } | undefined;
@@ -33,6 +39,7 @@ export type SliderContext<T> = {
   interactiveSync: () => Promise<void>;
   withPlayer: typeof withPlayer;
   config: StashToolsConfig;
+  device: MutableRefObject<HapticDevice | undefined>;
 };
 export type SliderOnCommit<T> = (
   ctx: SliderContext<T>,
@@ -74,6 +81,7 @@ const Slider = <T,>({
     initialised,
     sync: interactiveSync,
   } = hooks.useInteractive();
+  const { device } = useInteractiveTools();
   const [{ data: config, loading: isConfigLoaded }, setConfig] =
     useStashToolsConfig();
 
@@ -87,6 +95,7 @@ const Slider = <T,>({
       interactive,
       interactiveSync,
       withPlayer,
+      device,
       config,
     };
     await onBeforeCommit?.(ctx);
@@ -103,7 +112,7 @@ const Slider = <T,>({
 
     setCurrentValue(finalValue);
     await onAfterCommit?.(ctx);
-  }, 100);
+  }, 500);
   const onSliderChanged: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const value = onChange(e);
@@ -133,11 +142,25 @@ const Slider = <T,>({
         interactive,
         interactiveSync,
         withPlayer,
+        device,
         config,
       };
-      onSetup?.(ctx, setCurrentValue).then(() => {
-        tryInitialize();
-      });
+      const d = device.current;
+      if (d) {
+        if (d.id === HapticInterface.HANDY_DEFAULT) {
+          onSetup?.(ctx, setCurrentValue).then(() => {
+            tryInitialize();
+          });
+        } else {
+          const callback = function () {
+            d.off('configChanged', callback);
+            onSetup?.(ctx, setCurrentValue).then(() => {
+              tryInitialize();
+            });
+          };
+          d.on('configChanged', callback);
+        }
+      }
       setSetup(false);
     } else {
       tryInitialize();
@@ -155,6 +178,7 @@ const Slider = <T,>({
     config,
     setCurrentValue,
     interactiveSync,
+    device,
   ]);
 
   return children(currentValue, onSliderChanged, initialised);

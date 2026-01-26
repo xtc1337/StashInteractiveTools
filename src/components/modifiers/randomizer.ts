@@ -1,4 +1,4 @@
-import { Action, Funscript } from 'funscript-utils/lib/types';
+import { FunscriptAction, Funscript } from 'ive-connect';
 import { createModifierDef, createOptions } from './utils';
 
 // https://github.com/defucilis/funscript-io-2/blob/a514ea741e019e599b3ba52a22537199237c9ebd/lib/funscript-utils/funTweaker.ts#L237
@@ -22,7 +22,7 @@ export const getRandomizedScript = (
     return time + (Math.random() - 0.5) * (timeJitter * 2);
   };
 
-  const outputActions: Action[] = [];
+  const outputActions: FunscriptAction[] = [];
   for (let i = 0; i < funscript.actions.length; i++) {
     if (i === 0 || i === funscript.actions.length - 1) {
       outputActions.push({

@@ -116,6 +116,9 @@ const plugins = [
   emitAssetsPlugin('assets'),
   replace({
     preventAssignment: true,
+    'process.env.HANDY_APPLICATION_ID': JSON.stringify(
+      process.env.HANDY_APPLICATION_ID,
+    ),
     'process.env.NODE_ENV': JSON.stringify(
       process.env.NODE_ENV || 'development',
     ),

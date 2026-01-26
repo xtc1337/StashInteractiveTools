@@ -20,6 +20,9 @@ ui:
       - 'blob:'
       - 'https://scripts01.handyfeeling.com'
 settings:
+  hapticInterface:
+    type: STRING
+    displayName: Choose Haptic Interface to use
   enable_tagging:
     displayName: Enable Tagging Support
     type: BOOLEAN

@@ -5,13 +5,16 @@ export const DEFAULT_NAMESPACE = 'StashInteractiveTools';
 
 export function createDebugConsole(namespace = '', isDebug?: boolean) {
   const isBrowser = typeof window !== 'undefined';
+  if (process.env.DEBUG) {
+    isDebug = true;
+  }
 
   namespace = [DEFAULT_NAMESPACE, namespace].filter(Boolean).join(':');
   if (typeof isDebug === 'undefined') {
     isDebug =
       (isBrowser &&
         new URLSearchParams(window.location.search).get('debug') === 'true') ||
-      (typeof process !== 'undefined' && process.env?.DEBUG === 'true');
+      process.env.DEBUG === 'true';
   }
 
   const prefix = namespace ? `[${namespace}]` : '';

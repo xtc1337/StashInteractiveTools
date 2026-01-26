@@ -1,5 +1,6 @@
 import { FunTweaker } from 'funscript-utils';
 import { createModifierDef, createOptions } from './utils';
+import { Funscript } from 'ive-connect';
 
 const options = createOptions([
   {
@@ -26,6 +27,6 @@ export const remapperModifierDef = createModifierDef({
     return [`Min: ${min}`, `Max: ${max}`].join(' | ');
   },
   apply: (script, { min, max }) => {
-    return FunTweaker.getRemappedScript(script, min, max);
+    return FunTweaker.getRemappedScript(script, min, max) as Funscript;
   },
 });

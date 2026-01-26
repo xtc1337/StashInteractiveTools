@@ -5,7 +5,12 @@ import React, { PropsWithChildren } from 'react';
 import { InteractiveToolsTab } from './components';
 import { Nav, Tab } from 'react-bootstrap';
 import { patch } from './api';
-import { enableInteractiveTools } from './utils';
+import { DEFAULT_NAMESPACE, enableInteractiveTools } from './utils';
+import {
+  PluginSettings,
+  PluginSettingsProps,
+} from './components/PluginSettings';
+import './utils/interactive/client-provider';
 
 interface SceneFileInfoPanelProps {
   scene: SceneDataFragment;
@@ -45,5 +50,13 @@ patch.after(
         </Tab.Pane>
       </>
     );
+  },
+);
+
+patch.instead(
+  'PluginSettings',
+  (props: PluginSettingsProps, _, originalComponent) => {
+    if (props.pluginID !== DEFAULT_NAMESPACE) return originalComponent(props);
+    return <PluginSettings {...props} />;
   },
 );

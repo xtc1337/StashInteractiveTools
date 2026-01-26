@@ -1,5 +1,6 @@
 import { FunHalver } from 'funscript-utils';
 import { createModifierDef, createOptions, withOrWithout } from './utils';
+import { Funscript } from 'ive-connect';
 
 const options = createOptions([
   {
@@ -48,6 +49,6 @@ export const halverModifierDef = createModifierDef({
     ].join(' | ');
   },
   apply: (script, ctx) => {
-    return FunHalver.getHalfSpeedScript(script, ctx);
+    return FunHalver.getHalfSpeedScript(script, ctx) as Funscript;
   },
 });

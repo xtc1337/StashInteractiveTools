@@ -1,6 +1,6 @@
 import { FunUtils } from 'funscript-utils';
-import { Action } from 'funscript-utils/src/types';
-import { Funscript } from 'funscript-utils/lib/types';
+
+import { Funscript, FunscriptAction } from 'ive-connect';
 import { createModifierDef, createOptions, withOrWithout } from './utils';
 
 const { getActionGroups, roundAction } = FunUtils;
@@ -17,13 +17,13 @@ export interface FunDoublerOptions {
 
 /**
  * Takes in a group of actions and creates a double-speed version of that group, without losing cadence
- * @param  {Action[]} actionGroup - The group to double the speed of
+ * @param  {FunscriptAction[]} actionGroup - The group to double the speed of
  * @param  {FunDoublerOptions} options - Options to change the behaviour of the speed-doubling
  */
 export const getDoubleSpeedGroup = (
-  actionGroup: Action[],
+  actionGroup: FunscriptAction[],
   options: FunDoublerOptions,
-): Action[] => {
+): FunscriptAction[] => {
   //to begin with, we remove short pauses
   const noShortPauses = actionGroup.filter((action, i) => {
     if (i === 0) return true;
@@ -34,7 +34,7 @@ export const getDoubleSpeedGroup = (
   });
 
   //first, we need to simplify the group into straight up and down lines - no curves
-  const simplifiedGroup: Action[] = [];
+  const simplifiedGroup: FunscriptAction[] = [];
   for (let i = 0; i < noShortPauses.length; i++) {
     if (i === 0 || i === noShortPauses.length - 1) {
       simplifiedGroup.push(noShortPauses[i]);
@@ -47,7 +47,7 @@ export const getDoubleSpeedGroup = (
 
   //now we can just go through and double each action
   let currentPos = simplifiedGroup[0].pos;
-  const finalGroup: Action[] = [];
+  const finalGroup: FunscriptAction[] = [];
   for (let i = 0; i < simplifiedGroup.length; i++) {
     const curAction = simplifiedGroup[i];
 

@@ -5,19 +5,21 @@ import React, {
   useState,
 } from 'react';
 import { SlideInfo } from 'thehandy/src/types';
-import { useStashToolsConfig } from '../hooks';
+import { useInteractiveTools, useStashToolsConfig } from '../hooks';
 import { useDebouncedCallback } from 'use-debounce';
 import { Form } from 'react-bootstrap';
 
 import { hooks } from '../api';
 
 const StrokeSlider = () => {
-  const { interactive, initialised } = hooks.useInteractive();
+  const { initialised } = hooks.useInteractive();
+  const { device } = useInteractiveTools();
   const [{ data: config, loading: isConfigLoaded }, setConfig] =
     useStashToolsConfig();
+
   const [completed, setCompleted] = useState(false);
 
-  const [slideInfo, setSlideInfo] = useState<SlideInfo>({ min: 0, max: 100 });
+  const [slideInfo, setSlideInfo] = useState<SlideInfo>({ min: 0, max: 1 });
 
   const onCommitSliderChanges = useDebouncedCallback(async () => {
     setConfig((v) => ({
@@ -25,12 +27,14 @@ const StrokeSlider = () => {
       slideInfo,
     }));
 
-    await interactive._handy.setSlideSettings(slideInfo.min, slideInfo.max);
+    await device.current!.updateConfig({
+      stroke: slideInfo,
+    });
   }, 500);
   const onSliderChanged: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const name = e.target.name as 'min' | 'max';
-      const updatedValue = parseInt(e.target.value, 10);
+      const updatedValue = parseFloat(e.target.value);
 
       setSlideInfo((v) => ({
         ...v,
@@ -43,7 +47,12 @@ const StrokeSlider = () => {
 
   useEffect(() => {
     if (initialised && isConfigLoaded && !completed) {
-      setSlideInfo(config.slideInfo);
+      if (config.slideInfo.min > 1 || config.slideInfo.max > 1) {
+        // fix converting
+        setSlideInfo({ min: 0, max: 1 });
+      } else {
+        setSlideInfo(config.slideInfo);
+      }
       onCommitSliderChanges()?.catch(console.error);
       setCompleted(true);
     }
@@ -61,7 +70,7 @@ const StrokeSlider = () => {
       <dt>
         Stroke:{' '}
         <span className="stroke-range">
-          {slideInfo.min}-{slideInfo.max}
+          {slideInfo.min * 100}-{slideInfo.max * 100}
         </span>
       </dt>
       <dd className="form-container row">
@@ -91,14 +100,16 @@ const StrokeSlider = () => {
               value={slideInfo.min}
               disabled={!initialised}
               min={0}
-              max={100}
+              step="0.01"
+              max={1}
               onChange={onSliderChanged}
             />
             <Form.Control
               as="input"
               type="range"
               min={0}
-              max={100}
+              max={1}
+              step="0.01"
               name="max"
               disabled={!initialised}
               onChange={onSliderChanged}

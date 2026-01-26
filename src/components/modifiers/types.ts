@@ -1,4 +1,4 @@
-import { Funscript } from 'funscript-utils/lib/types';
+import { Funscript } from 'ive-connect';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Any = any;

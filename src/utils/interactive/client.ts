@@ -1,7 +1,9 @@
 import {
   DeviceCapability,
   DeviceInfo,
+  DeviceScriptLoadResult,
   DeviceSettings,
+  Funscript,
   HandyDeviceInfo,
   HandySettings,
   HapticDevice,
@@ -15,7 +17,7 @@ import Handy, { HandyFirmwareStatus } from 'thehandy';
 type Config = HandySettings;
 
 const DEFAULT_CONFIG: Config = {
-  id: 'handy',
+  id: 'default',
   name: 'Handy',
   connectionKey: '',
 
@@ -26,6 +28,14 @@ const DEFAULT_CONFIG: Config = {
     max: 1,
   },
 };
+
+export interface DefaultDeviceSettings extends DeviceSettings {
+  offset?: number;
+  stroke?: {
+    min: number;
+    max: number;
+  };
+}
 
 export class DefaultHandyClient implements HapticDevice {
   readonly id: string = 'default';
@@ -68,22 +78,33 @@ export class DefaultHandyClient implements HapticDevice {
     if (info.fwStatus === HandyFirmwareStatus.updateRequired) {
       throw new Error('Handy firmware update required');
     }
+    const offset = await this._handy.getHsspOffset();
     const slideInfo = await this._handy.getSlideSettings();
     this._config = {
       ...this._config,
       stroke: slideInfo,
+      offset,
     };
     this._connectionState = ConnectionState.CONNECTED;
     return this.isConnected;
   }
 
-  disconnect(): Promise<boolean> {
-    throw new Error('Method not implemented.');
+  async disconnect(): Promise<boolean> {
+    if (this._isPlaying) {
+      await this.stop();
+    }
+    this._connectionState = ConnectionState.DISCONNECTED;
+
+    return true;
   }
-  getConfig(): DeviceSettings {
+  getConfig(): DefaultDeviceSettings {
     return this._config;
   }
-  async updateConfig(config: Partial<DeviceSettings>): Promise<boolean> {
+  async updateConfig({
+    stroke,
+    offset,
+    ...config
+  }: Partial<DefaultDeviceSettings>): Promise<boolean> {
     if (config.looping) {
       await this._handy.setHsspLoop(config.looping as boolean);
     }
@@ -95,7 +116,22 @@ export class DefaultHandyClient implements HapticDevice {
       ...config,
     };
     this._handy.connectionKey = this._config.connectionKey;
+
+    if (stroke) {
+      await this._handy.setSlideSettings(stroke.min * 100, stroke.max * 100);
+      this._config.stroke = stroke;
+    }
+    if (offset !== undefined) {
+      const h = this._handy as {
+        setHstpOffset: (v: number) => Promise<unknown>;
+      };
+      await h.setHstpOffset(offset);
+      this._config.offset = offset;
+    }
     return true;
+  }
+  async prepareScript(_funscript: Funscript): Promise<DeviceScriptLoadResult> {
+    throw new Error('Method not implemented.');
   }
   async loadScript(
     scriptData: ScriptData,
@@ -129,7 +165,7 @@ export class DefaultHandyClient implements HapticDevice {
 
     this._isPlaying = await this._handy
       .setHsspPlay(
-        Math.round(timeMs * 1000 + this._config.offset),
+        Math.round(timeMs + this._config.offset),
         this._handy.estimatedServerTimeOffset + Date.now(), // our guess of the Handy server's UNIX epoch time
       )
       .then(() => true);

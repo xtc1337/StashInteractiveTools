@@ -2,7 +2,7 @@ import { ScriptPipe, ScriptPipeline } from '../../hooks';
 import { AnyModifierDef } from './types';
 import { asyncReduce } from '../../utils';
 import { toValues } from './utils';
-import { Funscript } from 'funscript-utils/lib/types';
+import { Funscript } from 'ive-connect';
 
 export const MODIFICATION_PIPELINE_ID = 'modification-pipeline';
 export class ModificationPipeline implements ScriptPipeline {

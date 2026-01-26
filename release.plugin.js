@@ -10,7 +10,12 @@ const { createHash } = require('crypto');
 
 const CONFIGS = {
   '@semantic-release/changelog': {
-    next: false,
+    next: {
+      changelogFile: './CHANGELOG-next.md',
+    },
+    alpha: {
+      changelogFile: './CHANGELOG-alpha.md',
+    },
   },
   '@semantic-release/git': {
     common: {
@@ -21,7 +26,10 @@ const CONFIGS = {
       assets: ['./stash.yml', './CHANGELOG.md'],
     },
     next: {
-      assets: ['./stash-next.yml'],
+      assets: ['./stash-next.yml', './CHANGELOG-next.md'],
+    },
+    alpha: {
+      assets: ['./stash-alpha.yml', './CHANGELOG-alpha.md'],
     },
   },
 };
@@ -145,7 +153,7 @@ const zipPlugin = {
 };
 
 const BASE_DOWNLOAD_URL =
-  'https://github.com/blackx69/StashInteractiveTools/releases/download/';
+  'https://github.com/xtc1337/StashInteractiveTools/releases/download/';
 module.exports = {
   verifyConditions: async (pluginConfig, context) => {
     await changelogPlugin.verifyConditions(pluginConfig, context);

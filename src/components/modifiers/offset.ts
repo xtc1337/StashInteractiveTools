@@ -1,5 +1,6 @@
 import { FunTweaker } from 'funscript-utils';
 import { createModifierDef, createOptions } from './utils';
+import { Funscript } from 'ive-connect';
 
 const options = createOptions([
   {
@@ -19,6 +20,6 @@ export const offsetModifierDef = createModifierDef({
     return `Amount: ${amount}`;
   },
   apply: (script, ctx) => {
-    return FunTweaker.getOffsetScript(script, ctx.amount);
+    return FunTweaker.getOffsetScript(script, ctx.amount) as Funscript;
   },
 });

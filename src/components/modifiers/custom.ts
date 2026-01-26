@@ -1,4 +1,4 @@
-import { Funscript } from 'funscript-utils/lib/types';
+import { Funscript } from 'ive-connect';
 import { createDebugConsole } from '../../utils';
 import { createModifierDef, createOptions } from './utils';
 
