@@ -20,11 +20,13 @@ export const enableHandyTokens: SITHook<SITHookEvent.RESOLVE_FUNSCRIPT_PATH> = {
 
   async apply(ctx, { funscriptPath }) {
     const {
+      logger,
       state: { current: state },
     } = ctx;
     const { device } = state;
 
     if (!cache.id || cache.id !== state.id) {
+      logger.debug('cache invalidated');
       cache = {
         id: state.id,
         url: '',
@@ -37,6 +39,7 @@ export const enableHandyTokens: SITHook<SITHookEvent.RESOLVE_FUNSCRIPT_PATH> = {
       state.config.handleHandyFileTokens &&
       deviceSupportsHandyTokens(device)
     ) {
+      logger.debug('checking for handy tokens');
       const script = state.script;
       const withinTokenFileSize = getJsonFileSize(script) <= 2100;
       const {
@@ -44,9 +47,12 @@ export const enableHandyTokens: SITHook<SITHookEvent.RESOLVE_FUNSCRIPT_PATH> = {
       } = script;
       const hasTokenFirstPosition = first.pos === 0 && first.at === 66;
       if (withinTokenFileSize && hasTokenFirstPosition) {
+        logger.debug('handy tokens detected');
         if (cache.url) {
+          logger.debug('using cached handy tokens url');
           funscriptPath = cache.url;
         } else {
+          logger.debug('generating handy tokens url');
           cache.url = funscriptPath = await getHandyFeelingUrl(script);
         }
         useOriginal = false;
@@ -54,10 +60,13 @@ export const enableHandyTokens: SITHook<SITHookEvent.RESOLVE_FUNSCRIPT_PATH> = {
     }
 
     if (!state.ivdb && useOriginal) {
+      logger.debug('using original funscript path');
       funscriptPath = state.blobUrl || funscriptPath;
       if (deviceSupportsHandyTokens(device)) {
         funscriptPath = await getHandyFeelingUrl(funscriptPath);
       }
+    } else {
+      logger.debug('using ivdb funscript path');
     }
     return { funscriptPath };
   },

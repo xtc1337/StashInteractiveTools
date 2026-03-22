@@ -57,6 +57,7 @@ export class DefaultHandyClient implements HapticDevice {
   ];
   constructor(handy: Handy, handyKey: string = '', scriptOffset: number = 0) {
     this._handy = handy;
+    this._handy.verbose = true;
 
     this._config = {
       ...DEFAULT_CONFIG,

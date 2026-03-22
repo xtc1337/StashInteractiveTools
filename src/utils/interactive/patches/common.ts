@@ -12,8 +12,8 @@ export const connectPatcher = withPatcher('connect', (ctx) => {
     } = ctx;
 
     logger.debug('connecting....');
-
     await device.connect(device.getConfig());
+    logger.debug('connected!');
   });
 });
 
@@ -34,15 +34,17 @@ export const configurePatcher = withPatcher('configure', (ctx) => {
       state: {
         current: { device },
       },
+      logger,
     } = ctx;
-    ctx.logger.debug('configure', config);
+    logger.debug('configure', config);
     await device.updateConfig(config);
+    logger.debug('configured!');
   });
   /* const client = ctx.api as InteractiveClient;
   requestAnimationFrame(() => {
     client
       .resume('configure', async (m) => {
-        ctx.logger.debug('configure suspended');
+        logger.debug('configure suspended');
         const { device } = ctx.state.current;
         const config = m.args[0] as Partial<DeviceSettings>;
         if (config.connectionKey) {
@@ -52,7 +54,7 @@ export const configurePatcher = withPatcher('configure', (ctx) => {
         return m._resolve();
       })
       .finally(() => {
-        ctx.logger.debug('configure resumed');
+        logger.debug('configure resumed');
       });
   }); */
 });
@@ -64,17 +66,19 @@ export const syncPatcher = withPatcher('sync', (ctx) => {
       state: {
         current: { device },
       },
+      logger,
     } = ctx;
-    ctx.logger.debug('sync');
+    logger.debug('sync');
 
     const timeMs = (getPlayerPosition() ?? 0) * 1000;
     if (!device.isConnected) {
-      ctx.logger.debug('connecting to device for sync');
+      logger.debug('connecting to device for sync');
       await device.connect();
+      logger.debug('connected to device for sync');
     }
-    ctx.logger.debug('syncing time', timeMs);
+    logger.debug('syncing time', timeMs);
     await device.syncTime(timeMs);
-    ctx.logger.debug('synced time', timeMs);
+    logger.debug('synced time', timeMs);
     try {
       if (device.id == HapticInterface.HANDY_DEFAULT) {
         return api._handy.estimatedServerTimeOffset;
@@ -82,7 +86,7 @@ export const syncPatcher = withPatcher('sync', (ctx) => {
         return (device as HandyDevice).api.getServerTimeOffset();
       }
     } catch (e) {
-      ctx.logger.error(e);
+      logger.error(e);
     }
     // buttplug || autoblow
     return 0;
@@ -92,12 +96,15 @@ export const syncPatcher = withPatcher('sync', (ctx) => {
 export const pausePatcher = withPatcher('pause', (ctx) => {
   ctx.value(async function pause() {
     const {
+      logger,
       state: {
         current: { device },
       },
     } = ctx;
 
+    logger.debug('pausing...');
     await device.stop();
+    logger.debug('paused!');
   });
 });
 
@@ -107,13 +114,17 @@ export const ensurePlayingPatcher = withPatcher('ensurePlaying', (ctx) => {
       state: {
         current: { device },
       },
+      logger,
     } = ctx;
-    ctx.logger.debug('ensurePlaying', position, device.isPlaying);
+    logger.debug('ensurePlaying', position, device.isPlaying);
     if (device.isPlaying) {
+      logger.debug('ensurePlaying already playing');
       return;
     }
 
+    logger.debug('triggering play for ensurePlaying');
     await device.play(position);
+    logger.debug('ensurePlaying triggered play');
   });
 });
 
@@ -123,19 +134,17 @@ export const playPatcher = withPatcher('play', (ctx) => {
       state: {
         current: { device },
       },
+      logger,
     } = ctx;
-    ctx.logger.debug('play', position, device.isPlaying);
+    logger.debug('play', position, device.isPlaying);
     if (!device.isConnected) {
-      ctx.logger.debug('connecting to device for play');
+      logger.debug('connecting to device for play');
       await device.connect();
+      logger.debug('connected to device for play');
     }
-    ctx.logger.debug(
-      'play connected',
-      position,
-      device.isPlaying,
-      device.isConnected,
-    );
 
+    logger.debug('playing at', position, position * 1000);
     await device.play(position * 1000);
+    logger.debug('played at', position, position * 1000);
   });
 });
