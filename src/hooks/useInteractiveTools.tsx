@@ -40,6 +40,10 @@ import {
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
 import { DefaultHandyClient } from '../utils/interactive/client';
 import { Funscript, HandyDevice, HapticDevice } from 'ive-connect';
+
+import { useInteractivePipelines } from './useInteractivePipelines';
+import { useInteractivePresets } from './useInteractivePresets';
+import { ScriptPipeline } from './types';
 import useInteractive = PluginApi.hooks.useInteractive;
 
 async function applyScriptChanges(url: string, script: Funscript) {
@@ -50,14 +54,7 @@ async function applyScriptChanges(url: string, script: Funscript) {
     src: url,
   };
 }
-export type ScriptPipe = {
-  url: string;
-  script: Funscript;
-};
-export interface ScriptPipeline {
-  apply(pipe: ScriptPipe): Promise<ScriptPipe> | ScriptPipe;
-  readonly name: string;
-}
+
 const logger = createDebugConsole('useInteractiveTools');
 export type InteractiveContext = {
   scene: SceneDataFragment;
@@ -112,15 +109,6 @@ type ScenePaths = {
   src?: string | null;
   heatMap?: string | null;
 };
-export async function resolveScriptPipeline(
-  initialValue: ScriptPipe,
-  pipelines: ScriptPipeline[],
-) {
-  return pipelines.reduce(
-    (promiseAcc, current) => promiseAcc.then((acc) => current.apply(acc)),
-    Promise.resolve(initialValue),
-  );
-}
 
 const DEFAULT_SIT_PLUGIN_CONFIG: SITPluginConfig = {
   alwaysDefaultToStashSyncOffset: false,
@@ -169,8 +157,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const [entries, setEntries] = useState<Script[]>([]);
 
   const unmodifiedScript = useRef<Funscript>();
-  const [presets, updatePresets] = useState<ModifierPreset[]>([]);
-  const [preset, setPreset] = useState<ModifierPreset | null>(null);
+
   const { data: stashConfig } = GQL.useConfigurationQuery();
 
   const [currentHooks, setHooks] = useState([enableHandyTokens]);
@@ -213,19 +200,24 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     src: scene.paths.funscript || '',
     heatMap: scene.paths.interactive_heatmap,
   });
+  const currentPathsRef = useRef(currentPaths);
+  currentPathsRef.current = currentPaths;
+  const updateScriptRef = useRef<
+    ((script?: Funscript | null) => Promise<ScenePaths | undefined>) | null
+  >(null);
   const client = useApolloClient();
 
   const hasInitialized = useRef(false);
-  const [pipelines, setPipelines] = useState<ScriptPipeline[]>(() => [
-    new ModificationPipeline(),
-  ]);
 
-  const getPipeline = useCallback(
-    <T extends ScriptPipeline = ScriptPipeline>(name: string) => {
-      return pipelines.find((p) => p.name === name) as T | undefined;
-    },
-    [pipelines],
-  );
+  const onPipelineChanged = useCallback(async () => {
+    await updateScriptRef.current?.();
+  }, []);
+
+  const { pipelines, getPipeline, addPipeline, removePipeline, runPipeline } =
+    useInteractivePipelines({
+      onPipelineChanged,
+    });
+  const { preset, presets, updatePresets, setPreset } = useInteractivePresets();
 
   const [defaultPaths] = useState<ScenePaths>({
     blobUrl: scene.paths.funscript,
@@ -239,28 +231,25 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
 
   const runScriptPipeline = useCallback(
     async (script: Funscript | null, updatedUrl?: string) => {
+      const url = updatedUrl || currentPathsRef.current.src || '';
+
+      if (!script) {
+        return;
+      }
+
       let changes: { blobUrl: string; src: string };
 
-      const url = updatedUrl || currentPaths.src || '';
       if (interactiveState.current.ivdb) {
         changes = {
           blobUrl: url,
           src: url,
         };
-      } else if (script) {
-        const pipe = await resolveScriptPipeline(
-          {
-            url,
-            script,
-          },
-          pipelines,
-        );
-
+      } else {
+        const pipe = await runPipeline(script, url);
         changes = await applyScriptChanges(url, pipe.script);
         interactiveState.current.script = pipe.script;
-      } else {
-        return;
       }
+
       const heatMap = await generateHeatmap(changes.blobUrl);
       const newPaths = {
         ...changes,
@@ -270,7 +259,9 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       if (newPaths.heatMap) {
         replaceHeatMap(newPaths.heatMap);
       }
+
       interactiveState.current.blobUrl = newPaths.blobUrl;
+
       client.writeQuery({
         query: GQL.FindSceneDocument,
         data: {
@@ -282,7 +273,6 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
             },
           }),
         },
-
         variables: {
           id: scene.id,
         },
@@ -291,7 +281,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       setCurrentPaths(newPaths);
       return newPaths;
     },
-    [currentPaths, pipelines, client, scene],
+    [client, runPipeline, scene],
   );
 
   const updateScript = useCallback(
@@ -303,25 +293,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     },
     [runScriptPipeline],
   );
-  const addPipeline = useCallback(
-    async (pipeline: ScriptPipeline, update?: boolean) => {
-      setPipelines((p) => [...p, pipeline]);
-      if (update) {
-        await updateScript();
-      }
-      return;
-    },
-    [setPipelines, updateScript],
-  );
-  const removePipeline = useCallback(
-    async <T extends ScriptPipeline = ScriptPipeline>(name: string) => {
-      const pipeline = pipelines.find((p) => p.name === name);
-      setPipelines((p) => p.filter((p) => p.name !== name));
-      await updateScript();
-      return pipeline as T | undefined;
-    },
-    [pipelines, updateScript],
-  );
+  updateScriptRef.current = updateScript;
 
   const updateModifiers = useCallback(
     (modifiers: AnyModifierDef[]) => {
@@ -392,40 +364,6 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     }
   }, [data, runScriptPipeline, id, onChange, entries]);
 
-  const savePresetInternal = useCallback(
-    (updatedPreset: ModifierPreset | null, toDelete = false) => {
-      setPreset(toDelete ? null : updatedPreset);
-      if (updatedPreset) {
-        const commitChanges = () => {
-          updatePresets((savedPresets) => {
-            const presetIndex = savedPresets.findIndex(
-              (p) => p.id === updatedPreset.id,
-            );
-
-            if (toDelete) {
-              if (presetIndex !== -1) {
-                savedPresets.splice(presetIndex, 1);
-              }
-              return [...savedPresets];
-            } else if (presetIndex !== -1) {
-              savedPresets[presetIndex] = updatedPreset;
-            } else {
-              savedPresets.push(updatedPreset);
-            }
-
-            return [...savedPresets];
-          });
-        };
-        if (toDelete && updatedPreset.id) {
-          DB.delete('presets', updatedPreset.id).then(commitChanges);
-        } else {
-          commitChanges();
-        }
-      }
-    },
-    [setPreset, updatePresets],
-  );
-
   useResumeInteractive(interactive, interactiveState);
   useEffect(() => {
     logger.debug('Connection status updated', { state });
@@ -448,7 +386,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       removePipeline,
       preset,
       presets,
-      setPreset: savePresetInternal,
+      setPreset,
       device: device,
       getPipeline,
       updateScript,
@@ -469,7 +407,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       updateScript,
       preset,
       updateModifiers,
-      savePresetInternal,
+      setPreset,
       presets,
       setHooks,
     ],
