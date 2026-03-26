@@ -21,16 +21,20 @@ const StrokeSlider = () => {
 
   const [slideInfo, setSlideInfo] = useState<SlideInfo>({ min: 0, max: 1 });
 
-  const onCommitSliderChanges = useDebouncedCallback(async () => {
-    setConfig((v) => ({
-      ...v,
-      slideInfo,
-    }));
+  const onCommitSliderChanges = useDebouncedCallback(
+    async () => {
+      setConfig((v) => ({
+        ...v,
+        slideInfo,
+      }));
 
-    await device.current!.updateConfig({
-      stroke: slideInfo,
-    });
-  }, 500);
+      await device.current!.updateConfig({
+        stroke: slideInfo,
+      });
+    },
+    500,
+    { leading: true },
+  );
   const onSliderChanged: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const name = e.target.name as 'min' | 'max';

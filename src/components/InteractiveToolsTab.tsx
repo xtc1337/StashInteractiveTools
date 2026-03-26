@@ -6,6 +6,8 @@ import SyncSlider from './SyncSlider';
 import ScriptChooser from './ScriptChooser';
 import { ModifyScript } from './ModifyScript';
 import { ConnectionState } from '../utils';
+import { DebugConsoleModal, useDebugConsole } from './DebugConsoleModal';
+import { InteractiveToolsControls } from './InteractiveToolsControls';
 
 type Props = {
   scene: SceneDataFragment;
@@ -14,22 +16,27 @@ type Props = {
 const InteractiveToolsContent = () => {
   const { currentPaths, onChange, entries, defaultPaths, state } =
     useInteractiveTools();
+  const debugHandle = useDebugConsole();
 
   return (
-    <div className="stash-interactive-tools">
-      <dl className="container  details-list">
-        <ScriptChooser
-          disabled={state !== ConnectionState.Ready}
-          value={currentPaths.src || ''}
-          defaultScript={defaultPaths.src || ''}
-          onChange={onChange}
-          options={entries}
-        />
-        <StrokeSlider />
-        <SyncSlider />
-      </dl>
-      <ModifyScript />
-    </div>
+    <>
+      <DebugConsoleModal handle={debugHandle} />
+      <div className="stash-interactive-tools">
+        <InteractiveToolsControls debugHandle={debugHandle} />
+        <dl className="container  details-list">
+          <ScriptChooser
+            disabled={state !== ConnectionState.Ready}
+            value={currentPaths.src || ''}
+            defaultScript={defaultPaths.src || ''}
+            onChange={onChange}
+            options={entries}
+          />
+          <StrokeSlider />
+          <SyncSlider />
+        </dl>
+        <ModifyScript />
+      </div>
+    </>
   );
 };
 export const InteractiveToolsTab = (props: Props) => {

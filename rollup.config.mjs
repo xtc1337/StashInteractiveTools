@@ -176,7 +176,8 @@ export default [
            '@apollo/client':window.PluginApi.libraries.Apollo,           
            '@fortawesome/free-regular-svg-icons':window.PluginApi.libraries.FontAwesomeRegular,
            '@fortawesome/free-solid-svg-icons':window.PluginApi.libraries.FontAwesomeSolid,
-           
+           '@fortawesome/free-brands-svg-icons':window.PluginApi.libraries.FontAwesomeBrands,
+           '@fortawesome/react-fontawesome':window.PluginApi.libraries.ReactFontAwesome,
           }[name];
         }`,
         //file: packageJson.main,
@@ -203,6 +204,8 @@ export default [
       '@apollo/client',
       '@fortawesome/free-regular-svg-icons',
       '@fortawesome/free-solid-svg-icons',
+      '@fortawesome/free-brands-svg-icons',
+      '@fortawesome/react-fontawesome',
     ],
   },
 ];

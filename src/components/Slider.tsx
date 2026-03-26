@@ -89,30 +89,34 @@ const Slider = <T,>({
   const [currentValue, setCurrentValue] = useState(defaultValue);
   const [setup, setSetup] = useState(true);
 
-  const onCommitSyncChanges = useDebouncedCallback(async (nextValue?: T) => {
-    const ctx: SliderContext<T> = {
-      currentValue,
-      interactive,
-      interactiveSync,
-      withPlayer,
-      device,
-      config,
-    };
-    await onBeforeCommit?.(ctx);
-    const commitReturnValue = await onCommit(ctx, nextValue);
-    const [finalValue, shouldSaveToConfig] = Array.isArray(commitReturnValue)
-      ? commitReturnValue
-      : [commitReturnValue, true];
-    if (shouldSaveToConfig) {
-      setConfig((v) => ({
-        ...v,
-        [configName]: finalValue,
-      }));
-    }
+  const onCommitSyncChanges = useDebouncedCallback(
+    async (nextValue?: T) => {
+      const ctx: SliderContext<T> = {
+        currentValue,
+        interactive,
+        interactiveSync,
+        withPlayer,
+        device,
+        config,
+      };
+      await onBeforeCommit?.(ctx);
+      const commitReturnValue = await onCommit(ctx, nextValue);
+      const [finalValue, shouldSaveToConfig] = Array.isArray(commitReturnValue)
+        ? commitReturnValue
+        : [commitReturnValue, true];
+      if (shouldSaveToConfig) {
+        setConfig((v) => ({
+          ...v,
+          [configName]: finalValue,
+        }));
+      }
 
-    setCurrentValue(finalValue);
-    await onAfterCommit?.(ctx);
-  }, 500);
+      setCurrentValue(finalValue);
+      await onAfterCommit?.(ctx);
+    },
+    500,
+    { leading: true },
+  );
   const onSliderChanged: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const value = onChange(e);

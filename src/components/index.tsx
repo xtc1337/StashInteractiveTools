@@ -5,3 +5,4 @@ export * from './InteractiveToolsTab';
 export * from './ScriptChooser';
 export * from './ModifyScript';
 export * from './ModifierEditor';
+export * from './DebugConsoleModal';
