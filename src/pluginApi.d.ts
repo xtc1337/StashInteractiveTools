@@ -7,6 +7,18 @@ declare namespace PluginApi {
   type ReactElement = React.ReactElement;
   type ReactNode = React.ReactNode;
   type FC = React.FC;
+  type StashEvent = EventTarget & {
+    addEventListener: (
+      event: string,
+      callback: (e: CustomEvent) => void,
+    ) => void;
+    dispatch: (
+      event: string,
+      id?: string,
+      data?: Record<string, unknown>,
+    ) => void;
+  };
+  const Event: StashEvent;
 
   namespace GQL {
     const AddGalleryImagesDocument: { [key: string]: any };

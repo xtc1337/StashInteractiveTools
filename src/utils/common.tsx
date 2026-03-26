@@ -1,5 +1,6 @@
 import React from 'react';
 import { SceneDataFragment } from '../generated-graphql';
+import { logStore } from './log-store';
 
 export const DEFAULT_NAMESPACE = 'StashInteractiveTools';
 
@@ -18,15 +19,30 @@ export function createDebugConsole(namespace = '', isDebug?: boolean) {
   }
 
   const prefix = namespace ? `[${namespace}]` : '';
-
-  const noop = () => {};
+  const ns = namespace;
 
   return {
-    debug: isDebug ? console.debug.bind(console, prefix) : noop,
-    log: isDebug ? console.log.bind(console, prefix) : noop,
-    info: isDebug ? console.info.bind(console, prefix) : noop,
-    warn: isDebug ? console.warn.bind(console, prefix) : noop,
-    error: isDebug ? console.error.bind(console, prefix) : noop,
+    namespace,
+    debug: (...args: unknown[]) => {
+      logStore.push('debug', ns, args);
+      if (isDebug) console.debug(prefix, ...args);
+    },
+    log: (...args: unknown[]) => {
+      logStore.push('log', ns, args);
+      if (isDebug) console.log(prefix, ...args);
+    },
+    info: (...args: unknown[]) => {
+      logStore.push('info', ns, args);
+      if (isDebug) console.info(prefix, ...args);
+    },
+    warn: (...args: unknown[]) => {
+      logStore.push('warn', ns, args);
+      if (isDebug) console.warn(prefix, ...args);
+    },
+    error: (...args: unknown[]) => {
+      logStore.push('error', ns, args);
+      if (isDebug) console.error(prefix, ...args);
+    },
   };
 }
 export function asyncReduce<T, U>(

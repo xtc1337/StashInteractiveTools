@@ -17,13 +17,16 @@ import { Script } from '../components';
 import {
   AnySITHook,
   ConnectionState,
+  createDebugConsole,
   deepMerge,
+  dispatchSITEvent,
   enableHandyTokens,
   generateHeatmap,
   getFunscript,
   HapticInterface,
   isIvdbTokenUrl,
   replaceHeatMap,
+  SITEvent,
   SITPluginConfig,
   usePatchedInteractiveApi,
   useResumeInteractive,
@@ -55,6 +58,7 @@ export interface ScriptPipeline {
   apply(pipe: ScriptPipe): Promise<ScriptPipe> | ScriptPipe;
   readonly name: string;
 }
+const logger = createDebugConsole('useInteractiveTools');
 export type InteractiveContext = {
   scene: SceneDataFragment;
   currentPaths: ScenePaths;
@@ -122,6 +126,7 @@ const DEFAULT_SIT_PLUGIN_CONFIG: SITPluginConfig = {
   alwaysDefaultToStashSyncOffset: false,
   handleHandyFileTokens: true,
   hapticInterface: HapticInterface.HANDY_DEFAULT,
+  disableHapticInterface: false,
 };
 
 type HapticDeviceBuilder = (
@@ -170,7 +175,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
 
   const [currentHooks, setHooks] = useState([enableHandyTokens]);
 
-  const sitPluginConfig =
+  const sitPluginConfig: SITPluginConfig =
     stashConfig?.configuration?.plugins?.['StashInteractiveTools'] ||
     DEFAULT_SIT_PLUGIN_CONFIG;
   const { interactive, state } = useInteractive();
@@ -422,6 +427,12 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   );
 
   useResumeInteractive(interactive, interactiveState);
+  useEffect(() => {
+    logger.debug('Connection status updated', { state });
+    dispatchSITEvent(SITEvent.CONNECTION_STATUS_UPDATED, {
+      state,
+    });
+  }, [state]);
 
   const contextValue = useMemo(
     () => ({

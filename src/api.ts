@@ -9,6 +9,8 @@ const {
   utils,
   components,
   loadableComponents,
+
+  Event: EventBus,
 } = api;
 const Apollo = libraries.Apollo;
 const gql = Apollo.gql;
@@ -19,6 +21,7 @@ export type InteractiveAPI = ReturnType<
 export type Any = any;
 
 export {
+  EventBus,
   React,
   libraries,
   hooks,

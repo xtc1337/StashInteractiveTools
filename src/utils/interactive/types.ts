@@ -12,6 +12,7 @@ export enum ConnectionState {
   Syncing,
   Uploading,
   Ready,
+  Disabled,
 }
 
 export enum SITHookEvent {
@@ -58,6 +59,7 @@ export type SITPluginConfig = {
   alwaysDefaultToStashSyncOffset: boolean;
   handleHandyFileTokens: boolean;
   hapticInterface: HapticInterface;
+  disableHapticInterface: boolean;
 };
 export type InteractiveState = MutableRefObject<{
   id: string;
@@ -137,3 +139,30 @@ type NonPrefixedKeys<T> = {
 export type PatchableMethodName =
   | FunctionPropertyNames<InteractiveAPI>
   | NonPrefixedKeys<InteractiveAPI>;
+
+export enum SITEvent {
+  CONNECTION_STATUS_UPDATED = 'sit:connectionStatusUpdated',
+}
+export type StashEventDetail<HasData extends boolean = false, T = unknown> = {
+  event: string | SITEvent;
+  data: HasData extends true ? T : undefined;
+};
+
+export type StashCustomEvent<T> = CustomEvent<T>;
+export type SITConnectionStatusUpdatedEvent = StashCustomEvent<
+  StashEventDetail<
+    true,
+    {
+      state: ConnectionState;
+    }
+  >
+>;
+
+export type SITEventsToDispatch = {
+  [SITEvent.CONNECTION_STATUS_UPDATED]: SITConnectionStatusUpdatedEvent;
+};
+
+export type SITEventData<E extends SITEvent> =
+  SITEventsToDispatch[E]['detail']['data'] extends undefined
+    ? never
+    : SITEventsToDispatch[E]['detail']['data'];

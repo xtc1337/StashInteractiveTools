@@ -20,6 +20,9 @@ ui:
       - 'blob:'
       - 'https://scripts01.handyfeeling.com'
 settings:
+  disableHapticInterface:
+    type: BOOLEAN
+    displayName: Disable the use of the Haptic Interface
   hapticInterface:
     type: STRING
     displayName: Choose Haptic Interface to use

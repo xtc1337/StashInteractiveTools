@@ -24,6 +24,34 @@ const DEFAULT_SHOULD_PATCH_CHECKER = <M extends PatchableMethodName>(
 ) => method._patched;
 
 const LOGGERS: Record<string, ReturnType<typeof createDebugConsole>> = {};
+
+function wrapDisabledCheck<M extends PatchableMethodName>(
+  ctx: PatchContext<M>,
+  method: PatchedMethod<M>,
+) {
+  const disabled = (ctx: PatchContext<M>) => {
+    const {
+      logger,
+      name,
+      state: {
+        current: { config },
+      },
+    } = ctx;
+    logger.debug('checking if disabled');
+    if (config.disableHapticInterface) {
+      logger.debug(`(${name}) method disabled`);
+      return true;
+    }
+    return false;
+  };
+
+  const proxy = ((...args: unknown[]) => {
+    if (disabled(ctx)) return;
+    return args.length ? method(...args) : method();
+  }) as PatchedMethod<M>;
+  proxy._patched = true;
+  return proxy;
+}
 export const patchMethod = <M extends PatchableMethodName>(
   ctx: InteractiveContext,
 
@@ -75,11 +103,11 @@ export const patchMethod = <M extends PatchableMethodName>(
         enumerable: true,
       });
     },
-    value: (method: PatchedMethod<M>) => {
+    value: function (method: PatchedMethod<M>) {
       logger.log('patching value...');
       method._patched = true;
       Object.defineProperty(ctx.api, methodName, {
-        value: method,
+        value: wrapDisabledCheck(this, method),
         writable: true,
         configurable: true,
         enumerable: true,
@@ -88,15 +116,6 @@ export const patchMethod = <M extends PatchableMethodName>(
   };
   logger.log('attempting to patch...');
   patcher.patch(patchContext, dispatcher);
-
-  /* const patchedMethod = as PatchedMethod<M>;
-
-  const patched = patchedMethod.bind(ctx.api);
-  patched._patched = true;
-
-  (ctx.api as Any)[methodName] = patched;
-
-  */
 };
 
 export function usePatchedInteractiveApi(

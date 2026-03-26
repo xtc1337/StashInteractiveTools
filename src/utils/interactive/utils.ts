@@ -1,7 +1,8 @@
 import { FunMapper } from 'funscript-utils';
 
-import { utils } from '../../api';
+import { EventBus, utils } from '../../api';
 import { Funscript, HapticDevice } from 'ive-connect';
+import { SITEvent, SITEventData, SITEventsToDispatch } from './types';
 
 const canvas = document.createElement('canvas');
 canvas.width = 1280;
@@ -82,4 +83,40 @@ export async function getHandyFeelingUrl(
   const csvFile = new File([csv], fileName);
 
   return await uploadCsv(csvFile).then((response) => response.url);
+}
+
+export function dispatchSITEvent<E extends SITEvent>(
+  event: E,
+  data: SITEventData<E>,
+) {
+  EventBus.dispatch(event, undefined, data);
+}
+
+type EventCallback = (event: SITEventsToDispatch[SITEvent]) => void;
+
+const CALLBACKS = {} as Partial<
+  Record<SITEvent, Record<string, EventCallback>>
+>;
+
+export function removeSITEventListener<E extends SITEvent>(
+  event: E,
+  id: string,
+) {
+  const callback = CALLBACKS[event]?.[id];
+  if (callback) EventBus.removeEventListener(`stash:${event}`, callback);
+  delete CALLBACKS[event]?.[id];
+}
+export function addSITEventListener<E extends SITEvent>(
+  event: E,
+  id: string,
+  callback: (event: SITEventsToDispatch[E]) => void,
+) {
+  // for some reason the `useEffect` doesn't trigger when the callback is removed, so we need to remove it manually
+
+  removeSITEventListener(event, id);
+
+  EventBus.addEventListener(`stash:${event}`, callback);
+  if (!CALLBACKS[event]) CALLBACKS[event] = {};
+
+  CALLBACKS[event][id] = callback;
 }
