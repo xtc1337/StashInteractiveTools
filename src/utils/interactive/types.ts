@@ -141,28 +141,41 @@ export type PatchableMethodName =
   | NonPrefixedKeys<InteractiveAPI>;
 
 export enum SITEvent {
-  CONNECTION_STATUS_UPDATED = 'sit:connectionStatusUpdated',
+  CONNECTION_STATUS_UPDATED = 'connectionStatusUpdated',
+  INCORRECT_SETUP = 'incorrectSetup',
 }
-export type StashEventDetail<HasData extends boolean = false, T = unknown> = {
-  event: string | SITEvent;
-  data: HasData extends true ? T : undefined;
-};
+export type StashEventDetail<
+  Event extends SITEvent,
+  HasData extends boolean = false,
+  T = unknown,
+> = {
+  event: Event;
+} & (HasData extends true ? { data: T } : unknown);
 
 export type StashCustomEvent<T> = CustomEvent<T>;
 export type SITConnectionStatusUpdatedEvent = StashCustomEvent<
   StashEventDetail<
+    SITEvent.CONNECTION_STATUS_UPDATED,
     true,
     {
       state: ConnectionState;
     }
   >
 >;
+export type SITIncorrectSetupEvent = StashCustomEvent<
+  StashEventDetail<SITEvent.INCORRECT_SETUP, false>
+>;
 
 export type SITEventsToDispatch = {
   [SITEvent.CONNECTION_STATUS_UPDATED]: SITConnectionStatusUpdatedEvent;
+  [SITEvent.INCORRECT_SETUP]: SITIncorrectSetupEvent;
 };
 
-export type SITEventData<E extends SITEvent> =
-  SITEventsToDispatch[E]['detail']['data'] extends undefined
-    ? never
-    : SITEventsToDispatch[E]['detail']['data'];
+export type SITEvents = SITEventsToDispatch[keyof SITEventsToDispatch];
+
+type DetailData<T> = T extends { data?: infer D } ? D : never;
+
+export type SITEventData<E extends SITEvent> = Exclude<
+  DetailData<SITEventsToDispatch[E]['detail']>,
+  undefined | never
+>;

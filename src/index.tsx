@@ -1,28 +1,17 @@
 import './style.scss';
 
 import { SceneDataFragment } from './generated-graphql';
-import React, { PropsWithChildren, useEffect, useMemo } from 'react';
+import React, { PropsWithChildren } from 'react';
 import { InteractiveToolsTab } from './components';
-import { Button, Nav, Tab } from 'react-bootstrap';
-import { GQL, patch, utils } from './api';
-import {
-  addSITEventListener,
-  ConnectionState,
-  createDebugConsole,
-  DEFAULT_NAMESPACE,
-  enableInteractiveTools,
-  removeSITEventListener,
-  SITConnectionStatusUpdatedEvent,
-  SITEvent,
-  SITPluginConfig,
-  TheHandyIcon,
-} from './utils';
+import { Nav, Tab } from 'react-bootstrap';
+import { patch } from './api';
+import { DEFAULT_NAMESPACE, enableInteractiveTools } from './utils';
 import {
   PluginSettings,
   PluginSettingsProps,
 } from './components/PluginSettings';
 import './utils/interactive/client-provider';
-import { useDebouncedCallback } from 'use-debounce';
+import { UtilityItems } from './components/UtilityItems';
 
 interface SceneFileInfoPanelProps {
   scene: SceneDataFragment;
@@ -73,90 +62,6 @@ patch.instead(
   },
 );
 
-const SHOULD_ANIMATE_CONNECTION_STATES = [
-  ConnectionState.Uploading,
-  ConnectionState.Connecting,
-  ConnectionState.Syncing,
-];
-const logger = createDebugConsole("'MainNavBar.UtilityItems");
-patch.after('MainNavBar.UtilityItems', (props: PropsWithChildren) => {
-  const [connectionState, setConnectionState] = React.useState<ConnectionState>(
-    ConnectionState.Missing,
-  );
-
-  const { data: stashConfig } = GQL.useConfigurationQuery();
-
-  const sitPluginConfig: SITPluginConfig | undefined =
-    stashConfig?.configuration?.plugins?.['StashInteractiveTools'];
-
-  const disableHapticInterface = useMemo(() => {
-    return sitPluginConfig?.disableHapticInterface ?? false;
-  }, [sitPluginConfig]);
-  const [updatePluginConfig] = utils.StashService.useConfigurePlugin();
-
-  const onToggleInteractive = useDebouncedCallback(
-    async () => {
-      if (!sitPluginConfig) return;
-      const disabled = !sitPluginConfig.disableHapticInterface;
-
-      logger.debug('Toggling interactive', disabled);
-      await updatePluginConfig({
-        variables: {
-          plugin_id: 'StashInteractiveTools',
-          input: {
-            ...sitPluginConfig,
-            disableHapticInterface: disabled,
-          },
-        },
-      });
-    },
-    500,
-    {
-      leading: true,
-    },
-  );
-
-  useEffect(() => {
-    const onConnectionStateUpdated = (
-      event: SITConnectionStatusUpdatedEvent,
-    ) => {
-      logger.debug('Connection state updated:', event.detail.data.state);
-      setConnectionState(event.detail.data.state);
-    };
-    logger.debug('Setting up connection state listener');
-    addSITEventListener(
-      SITEvent.CONNECTION_STATUS_UPDATED,
-      logger.namespace,
-      onConnectionStateUpdated,
-    );
-    return () => {
-      console.log('REMOVING');
-      logger.debug('Removing connection state listener');
-      removeSITEventListener(
-        SITEvent.CONNECTION_STATUS_UPDATED,
-        logger.namespace,
-      );
-    };
-  }, []);
-  const animate =
-    !disableHapticInterface &&
-    SHOULD_ANIMATE_CONNECTION_STATES.includes(connectionState);
-  return (
-    <>
-      {props.children}
-      <div className="stash-interactive-tools-utility-item">
-        <Button
-          className="nav-utility minimal"
-          title={'toggle interactive'}
-          onClick={onToggleInteractive}
-        >
-          <TheHandyIcon
-            size={20}
-            animate={animate}
-            disabled={disableHapticInterface}
-          />
-        </Button>
-      </div>
-    </>
-  );
+patch.after('MainNavBar.UtilityItems', (props) => {
+  return <UtilityItems {...props} />;
 });

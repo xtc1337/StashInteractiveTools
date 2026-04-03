@@ -18,7 +18,7 @@ import YAML from 'yaml';
 import 'dotenv/config';
 import { Writable } from 'stream';
 
-const ASSETS_TO_OMIT = ['payload.json'];
+const ASSETS_TO_OMIT = ['payload.json', 'stash_interactive_tools.db'];
 const META_FILE_PATH = 'dist/StashInteractiveTools.yml';
 const nullWriteStream = new Writable({
   write(chunk, encoding, callback) {
@@ -92,6 +92,7 @@ function emitAssetsPlugin(assetsDir) {
           if (entry.isDirectory()) {
             walk(fullPath);
           } else {
+            this.addWatchFile(fullPath);
             const relativePath = path.relative(assetsDir, fullPath);
             this.emitFile({
               type: 'asset',
@@ -120,7 +121,12 @@ const plugins = [
   copy({
     targets: [
       {
-        src: ['assets/**', '!assets/payload.json', '!assets/tasks'],
+        src: [
+          'assets/**',
+          '!assets/payload.json',
+          '!assets/stash_interactive_tools.db',
+          '!assets/tasks',
+        ],
 
         dest: 'dist/',
       },
@@ -153,10 +159,14 @@ if (prod) {
   plugins.push(strip({}));
 }
 
+/**
+ * @type {import('rollup').RollupOptions[]}
+ */
 export default [
   {
     input: 'src/index.tsx',
     cache: prod,
+
     output: [
       {
         banner: `(function StashInteractiveTools_init(w){

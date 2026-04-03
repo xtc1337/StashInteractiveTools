@@ -1,8 +1,5 @@
 import { Any, GQL, InteractiveAPI } from '../api';
-import {
-  SceneDataFragment,
-  useRunPluginOperationMutation,
-} from '../generated-graphql';
+import { SceneDataFragment } from '../generated-graphql';
 import { useApolloClient } from '@apollo/client';
 import React, {
   Dispatch,
@@ -43,7 +40,8 @@ import { Funscript, HandyDevice, HapticDevice } from 'ive-connect';
 
 import { useInteractivePipelines } from './useInteractivePipelines';
 import { useInteractivePresets } from './useInteractivePresets';
-import { ScriptPipeline } from './types';
+import { ScenePaths, ScriptPipeline } from './types';
+import { useInteractiveBackendInit } from './useInteractiveBackend';
 import useInteractive = PluginApi.hooks.useInteractive;
 
 async function applyScriptChanges(url: string, script: Funscript) {
@@ -57,6 +55,7 @@ async function applyScriptChanges(url: string, script: Funscript) {
 
 const logger = createDebugConsole('useInteractiveTools');
 export type InteractiveContext = {
+  hasSetupError: boolean;
   scene: SceneDataFragment;
   currentPaths: ScenePaths;
   defaultPaths: ScenePaths;
@@ -104,11 +103,6 @@ const InteractiveToolsContext = React.createContext<InteractiveContext>(
 type Props = React.PropsWithChildren<{
   scene: SceneDataFragment;
 }>;
-type ScenePaths = {
-  blobUrl?: string | null;
-  src?: string | null;
-  heatMap?: string | null;
-};
 
 const DEFAULT_SIT_PLUGIN_CONFIG: SITPluginConfig = {
   alwaysDefaultToStashSyncOffset: false,
@@ -193,13 +187,14 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
 
   usePatchedInteractiveApi(interactive, interactiveState);
 
-  const handyKey = interactive.handyKey;
-
   const [currentPaths, setCurrentPaths] = useState<ScenePaths>({
     blobUrl: scene.paths.funscript || '',
     src: scene.paths.funscript || '',
     heatMap: scene.paths.interactive_heatmap,
   });
+
+  //useSubscribeToSceneUpdates(currentPaths);
+
   const currentPathsRef = useRef(currentPaths);
   currentPathsRef.current = currentPaths;
   const updateScriptRef = useRef<
@@ -209,6 +204,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
 
   const hasInitialized = useRef(false);
 
+  const [hasSetupError, setHasSetupError] = useState(false);
   const onPipelineChanged = useCallback(async () => {
     await updateScriptRef.current?.();
   }, []);
@@ -225,9 +221,9 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     heatMap: scene.paths.interactive_heatmap,
   });
 
-  const [findScripts, { data }] = useRunPluginOperationMutation<{
-    scripts: Script[];
-  }>();
+  const [initializeScene, initializeResults] = useInteractiveBackendInit(
+    scene.id,
+  );
 
   const runScriptPipeline = useCallback(
     async (script: Funscript | null, updatedUrl?: string) => {
@@ -326,21 +322,15 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const id = scene.id;
   useEffect(() => {
     unmodifiedScript.current = undefined;
-    findScripts({
-      variables: {
-        plugin_id: 'StashInteractiveTools',
-        args: {
-          mode: 'init',
-          scene_id: id,
-          origin: window.location.origin,
-          handy_token: handyKey,
-        },
-      },
-    }).catch(console.error);
-  }, [findScripts, id, handyKey]);
+    initializeScene().catch(console.error);
+  }, [initializeScene, id]);
 
   useEffect(() => {
-    const scripts = data?.runPluginOperation?.scripts ?? [];
+    const {
+      data: { scripts } = { scripts: undefined },
+      loading,
+      called,
+    } = initializeResults || {};
 
     function setup() {
       DB.getAll('presets').then((records) => {
@@ -352,7 +342,16 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       setup();
     }
 
+    if (!scripts) {
+      if (called && !loading) {
+        dispatchSITEvent(SITEvent.INCORRECT_SETUP);
+        setHasSetupError(true);
+      }
+      return;
+    }
+
     if (scripts.length) {
+      logger.debug('Interactive tools initialized', { scripts });
       setEntries(scripts);
     }
     if (scripts.length && entries != scripts) {
@@ -362,7 +361,14 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       interactiveState.current.blobUrl = null;
       onChange(scripts[0].path).catch(console.error);
     }
-  }, [data, runScriptPipeline, id, onChange, entries]);
+  }, [
+    initializeResults,
+    runScriptPipeline,
+    id,
+    onChange,
+    entries,
+    updatePresets,
+  ]);
 
   useResumeInteractive(interactive, interactiveState);
   useEffect(() => {
@@ -392,6 +398,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       updateScript,
       updateModifiers,
       setHooks,
+      hasSetupError,
     }),
     [
       state,
@@ -410,6 +417,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       setPreset,
       presets,
       setHooks,
+      hasSetupError,
     ],
   );
   return (

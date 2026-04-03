@@ -1,18 +1,50 @@
 import glob
+import importlib
 import os
 import os.path
 import re
 import shutil
 import urllib.parse
+from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, AnyStr, Optional
 
 import requests
 
 if TYPE_CHECKING:
     from assets.config import Config
 
+Funscript: 'Funscript'
+
 config: 'Config'
+
+
+@dataclass
+class StashFunscript:
+    label: str
+    path: str
+    true_path: str
+    is_default: bool = False
+    id: Optional[int] = None
+
+    @staticmethod
+    def from_db(data: 'Funscript'):
+        return StashFunscript(
+            id=data.id,
+            label=data.name,
+            path=data.path,
+            true_path=data.true_path,
+            is_default=data.is_default,
+        )
+
+    def for_json(self):
+        return {
+            'id': self.id,
+            'label': self.label,
+            'path': self.path,
+            'truePath': self.true_path,
+            'isDefault': self.is_default,
+        }
 
 
 def parse_label_regex(script_filename, file_filename):
@@ -26,7 +58,7 @@ def parse_label_default(script_filename, file_filename):
     return re.sub(r'[()]', '', label).strip()
 
 
-def map_script(script, file, scene_id):
+def map_script(script: Path, file: str, scene_id) -> StashFunscript:
     output = os.path.join(config.PLUGIN_DIR, '.scripts',
                           scene_id)  # type: ignore
     if not os.path.exists(output):
@@ -39,9 +71,9 @@ def map_script(script, file, scene_id):
     shutil.copyfile(script, os.path.join(output, script_base_name))
 
     path = f'{config.PLUGIN_HTTP_ASSETS_PATH}/.scripts/{scene_id}/{urllib.parse.quote(script_filename)}.funscript'
-    parser = parse_label_default if not config.NAMING_CONVENTION else parse_label_regex
+    parser = parse_label_default  # if not config.NAMING_CONVENTION else parse_label_regex
     label = parser(script_filename, file_filename)
-    return {'label': label, 'path': path}
+    return StashFunscript(label=label, path=path, true_path=script.as_posix())
 
 
 VIDEO_EXTENSIONS = ['mp4', 'mov', 'wmv', 'avi', 'mkv']
@@ -60,11 +92,11 @@ def filter_out_false_versions(base_name, file):
     return True
 
 
-def deterministic_sort_scripts(scripts):
-    return sorted(scripts, key=lambda x: (x['label'] != 'Default', x['label']))
+def deterministic_sort_scripts(scripts: List[StashFunscript]):
+    return sorted(scripts, key=lambda x: (x.label != 'Default', x.label))
 
 
-def get_funscripts(file):
+def get_funscripts(file, scene_id) -> List[Path]:
     filename = os.path.basename(file)
     file_dir = Path(os.path.dirname(file))
     name = os.path.splitext(filename)[0]
@@ -73,14 +105,55 @@ def get_funscripts(file):
     return list(filter(lambda f: filter_out_false_versions(name, f), files))
 
 
-def analyze_file(file, scene_id):
-    files = get_funscripts(file)
-    scripts = deterministic_sort_scripts(
-        list(map(lambda script: map_script(script, file, scene_id), files)))
+def insert_funscript_records(
+        to_insert: List[StashFunscript],
+        scene_id: AnyStr,
+        starting_sort_order=0,
+):
+    rows = [
+        Funscript(scene_id=scene_id, path=f.path,
+                  true_path=f.true_path,
+                  name=f.label,
+                  is_default=f.label == 'Default',
+                  sort_order=starting_sort_order + i).__data__
+
+        for i, f in enumerate(to_insert)
+    ]
+    return list(Funscript.insert_many(rows).returning(Funscript).execute())
+
+
+def ensure_funscript_records(auto_discovered_scripts: List[StashFunscript],
+                             scene_id: AnyStr) -> List[StashFunscript]:
+    """Ensures known funscript records include newly discovered ones"""
+
+    known_scripts = list(Funscript.select().where(
+        Funscript.scene_id == scene_id).order_by(
+        Funscript.sort_order.asc()).execute())
+    known_scripts_paths = [script.true_path for script in known_scripts]
+
+    newly_discovered = list(
+        filter(lambda f: f.true_path not in known_scripts_paths,
+               auto_discovered_scripts))
+    config.log.debug(f'Auto discovered scripts: ${auto_discovered_scripts}')
+    if len(newly_discovered) > 0:
+        list(known_scripts).append(
+            insert_funscript_records(newly_discovered, scene_id,
+                                     len(known_scripts)))
+    config.log.debug(f'Known scripts: {known_scripts}')
+    return [StashFunscript.from_db(script) for script in known_scripts]
+
+
+def analyze_file(file: str, scene_id: str):
+    script_file_paths = get_funscripts(file, scene_id)
+    auto_discovered_scripts = deterministic_sort_scripts(
+        [map_script(script_file_path, file, scene_id) for script_file_path in
+         script_file_paths])
+    scripts = ensure_funscript_records(auto_discovered_scripts, scene_id)
+
     if 'omit_default' in config.FRAGMENT['args']:
         scripts = list(
-            filter(lambda script: script['label'] != 'Default', scripts))
-    return scripts
+            filter(lambda script: script.name != 'Default', scripts))
+    return [script.for_json() for script in scripts]
 
 
 def contains_value(array, value):
@@ -107,7 +180,8 @@ def lookup_ivdb_script(url, token):
         data = response.json()
         script_id = data[0]['scriptId']
         token_url = f'{BASE_IVDB_URL}{partner_video_id}/scripts/{script_id}/token'
-        config.log.debug(f'Looking up ivdb script {script_id} for {partner_video_id}: {token_url}')
+        config.log.debug(
+            f'Looking up ivdb script {script_id} for {partner_video_id}: {token_url}')
         response = requests.get(token_url
                                 ,
                                 headers={'Authorization': f'Bearer {token}'})
@@ -130,7 +204,7 @@ def analyze_scene():
           path
         }
 		"""
-    scene = config.stash.find_scene(scene_id,fragment)
+    scene = config.stash.find_scene(scene_id, fragment)
     # log.info(json.dumps(scene))
     scripts = []
     if scene['interactive']:
@@ -151,7 +225,9 @@ def analyze_scene():
 
 
 def run(c: 'Config'):
-    global config
+    global config, Funscript
     config = c
+    Funscript = importlib.import_module('db').Funscript
+
     scripts = analyze_scene()
     config.log.exit({'scripts': scripts})

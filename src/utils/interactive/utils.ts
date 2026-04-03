@@ -87,9 +87,9 @@ export async function getHandyFeelingUrl(
 
 export function dispatchSITEvent<E extends SITEvent>(
   event: E,
-  data: SITEventData<E>,
+  ...args: SITEventData<E> extends never ? [] : [data: SITEventData<E>]
 ) {
-  EventBus.dispatch(event, undefined, data);
+  EventBus.dispatch(event, undefined, args[0]);
 }
 
 type EventCallback = (event: SITEventsToDispatch[SITEvent]) => void;
@@ -99,24 +99,27 @@ const CALLBACKS = {} as Partial<
 >;
 
 export function removeSITEventListener<E extends SITEvent>(
-  event: E,
+  events: E | E[],
   id: string,
 ) {
-  const callback = CALLBACKS[event]?.[id];
-  if (callback) EventBus.removeEventListener(`stash:${event}`, callback);
-  delete CALLBACKS[event]?.[id];
+  (Array.isArray(events) ? events : [events]).forEach((event) => {
+    const callback = CALLBACKS[event]?.[id];
+    if (callback) EventBus.removeEventListener(`stash:${event}`, callback);
+    delete CALLBACKS[event]?.[id];
+  });
 }
 export function addSITEventListener<E extends SITEvent>(
-  event: E,
+  events: E | E[],
   id: string,
   callback: (event: SITEventsToDispatch[E]) => void,
 ) {
   // for some reason the `useEffect` doesn't trigger when the callback is removed, so we need to remove it manually
 
-  removeSITEventListener(event, id);
+  removeSITEventListener(events, id);
+  (Array.isArray(events) ? events : [events]).forEach((event) => {
+    EventBus.addEventListener(`stash:${event}`, callback);
+    if (!CALLBACKS[event]) CALLBACKS[event] = {};
 
-  EventBus.addEventListener(`stash:${event}`, callback);
-  if (!CALLBACKS[event]) CALLBACKS[event] = {};
-
-  CALLBACKS[event][id] = callback;
+    CALLBACKS[event][id] = callback;
+  });
 }

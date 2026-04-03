@@ -4,12 +4,23 @@ import os.path
 import sys
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from stashapi.stashapp import StashInterface
     import stashapi.log as stash_log
 
 DEBUG = False
 DEBUG = os.environ.get('STASH_INTERACTIVE_TOOLS_DEBUG',DEBUG)
+
+
+
+from pathlib import Path
+from inspect import stack
+
+
+
+
+
 
 
 
@@ -42,6 +53,8 @@ class Config:
     HANDY_TOKEN: str = ''
     PAYLOAD_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                 'payload.json')
+
+    SUITE_DIR = Path(__file__).parent.parent
 
     def get_task(self,name=None):
         if name is None:
@@ -100,4 +113,5 @@ def get_config():
         tag_name = '[SIT: Multi-Script]'
     config.TAG_NAME = tag_name
     config.HANDY_TOKEN = config.FRAGMENT["args"].get("handy_token","")
+
     return config
