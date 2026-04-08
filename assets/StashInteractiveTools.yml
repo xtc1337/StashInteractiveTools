@@ -5,6 +5,7 @@ url: https://github.com/xtc1337/StashInteractiveTools/
 exec:
   - python
   - '{pluginDir}/StashInteractiveTools.py'
+errLog: trace
 interface: raw
 ui:
   css:

@@ -26,6 +26,11 @@ const nullWriteStream = new Writable({
     callback();
   },
 });
+const MANIFEST_ERROR_LOG = {
+  main: 'info',
+  next: 'trace',
+  alpha: 'trace',
+};
 
 function updateMetadataVersionPlugin() {
   return {
@@ -71,6 +76,7 @@ function updateMetadataVersionPlugin() {
         META_FILE_PATH,
         YAML.stringify({
           ...YAML.parse(fs.readFileSync(META_FILE_PATH, 'utf8')),
+          errLog: MANIFEST_ERROR_LOG[results.nextRelease.channel],
           version: results.nextRelease.version,
         }),
       );
