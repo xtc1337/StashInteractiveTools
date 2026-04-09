@@ -1,27 +1,24 @@
+from __future__ import annotations
+
 import importlib
 import json
 import os.path
 import sys
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from stashapi.stashapp import StashInterface
     import stashapi.log as stash_log
 
 DEBUG = False
-DEBUG = os.environ.get('STASH_INTERACTIVE_TOOLS_DEBUG',DEBUG)
-
-
+DEBUG = os.environ.get('STASH_INTERACTIVE_TOOLS_DEBUG', DEBUG)
 
 from pathlib import Path
-from inspect import stack
+from helpers import bind_from_json
+from typing import Any, Callable, TypeVar
 
-
-
-
-
-
+T = TypeVar("T")
+FieldResolver = Callable[[Any, dict[str, Any], str], Any]
 
 
 class Config:
@@ -56,11 +53,20 @@ class Config:
 
     SUITE_DIR = Path(__file__).parent.parent
 
-    def get_task(self,name=None):
+    @staticmethod
+    def Funscript() -> 'Funscript':
+        return importlib.import_module('db').Funscript
+
+    def get_task(self, name=None):
         if name is None:
             name = self.mode
         task_module = f'tasks.{name}'
         return importlib.import_module(task_module)
+
+    def bind(self, model_cls: type[T],
+             resolves: dict[str, FieldResolver] | None = None) -> T:
+        return bind_from_json(model_cls, self.FRAGMENT['args'], resolves)
+
 
 config: Config
 
@@ -86,14 +92,13 @@ def get_config():
 
     config = Config()
 
-    if DEBUG :
+    if DEBUG:
         handle = open(config.PAYLOAD_FILE)
         config.FRAGMENT = json.load(handle)
         handle.close()
 
     else:
         config.FRAGMENT = json.loads(sys.stdin.read())
-        config.mode = config.FRAGMENT["args"]["mode"]
         handle = open(config.PAYLOAD_FILE, 'w+')
         handle.write(json.dumps(config.FRAGMENT))
 
@@ -102,8 +107,10 @@ def get_config():
     stash = get_stash_client()
 
     config.PLUGIN_DIR = config.FRAGMENT["server_connection"]['PluginDir']
-    origin = config.FRAGMENT["args"].get("origin", stash.url.replace('/graphql', ''))
+    origin = config.FRAGMENT["args"].get("origin",
+                                         stash.url.replace('/graphql', ''))
     config.PLUGIN_HTTP_ASSETS_PATH = f'{origin}/plugin/StashInteractiveTools/assets'
+    config.mode = config.FRAGMENT["args"].get("mode", "init")
 
     c = stash.find_plugin_config(config.ID)
     config.ENABLE_TAGGING = bool(c.get('enable_tagging'))
@@ -112,6 +119,6 @@ def get_config():
     if not tag_name:
         tag_name = '[SIT: Multi-Script]'
     config.TAG_NAME = tag_name
-    config.HANDY_TOKEN = config.FRAGMENT["args"].get("handy_token","")
+    config.HANDY_TOKEN = config.FRAGMENT["args"].get("handy_token", "")
 
     return config

@@ -9,6 +9,7 @@ export type ScenePaths = {
   blobUrl?: string | null;
   src?: string | null;
   heatMap?: string | null;
+  isDefault?: boolean;
 };
 export interface ScriptPipeline {
   apply(pipe: ScriptPipe): Promise<ScriptPipe> | ScriptPipe;

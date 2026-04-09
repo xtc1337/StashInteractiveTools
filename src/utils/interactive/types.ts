@@ -3,6 +3,7 @@ import { MutableRefObject } from 'react';
 import { createDebugConsole } from '../common';
 
 import { Funscript, HapticDevice } from 'ive-connect';
+import { ScriptEntry } from '../../components';
 
 export enum ConnectionState {
   Missing,
@@ -68,6 +69,7 @@ export type InteractiveState = MutableRefObject<{
   blobUrl: string | null;
   hooks: AnySITHook[];
   device: HapticDevice;
+  entry: ScriptEntry | null;
 
   config: SITPluginConfig;
 }>;

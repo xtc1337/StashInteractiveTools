@@ -22,7 +22,6 @@
     "ive-connect": "1.1.0",
     "localforage": "^1.10.0",
     "lodash-es": "^4.17.21",
-    "lodash.debounce": "^4.0.8",
     "react-bootstrap": "1.6.6",
     "react-dock": "^0.7.0",
     "react-draggable": "^4.4.6",
@@ -32,6 +31,7 @@
     "video.js": "^7.21.3"
   },
   "devDependencies": {
+    "ts-toolbelt": "^9.6.0",
     "@commitlint/cli": "^18.4.4",
     "@commitlint/config-conventional": "^18.4.4",
     "@eslint/compat": "^1.1.1",
@@ -50,6 +50,7 @@
     "@semantic-release/release-notes-generator": "^14.0.3",
     "@types/eslint__js": "^8.42.3",
     "@types/lodash.debounce": "^4.0.9",
+    "@types/lodash.snakecase": "^4.1.9",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",

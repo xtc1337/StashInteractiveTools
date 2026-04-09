@@ -1,5 +1,8 @@
 import React, { ChangeEventHandler, useCallback, useState } from 'react';
-import { libraries } from '../api';
+import { components, libraries } from '../api';
+import { Button } from 'react-bootstrap';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
+import { faHeart } from '@fortawesome/free-regular-svg-icons';
 
 const fullWidthProps = {
   labelProps: {
@@ -13,35 +16,50 @@ const fullWidthProps = {
   },
 };
 const { Form, Row, Col } = libraries.Bootstrap;
+const { Icon } = components;
 
-export type Script = {
+export type ScriptEntry = {
+  id: number;
   label: string;
   path: string;
+  isDefault: boolean;
 };
 type Props = {
-  disabled: boolean;
-  value: string;
-  defaultScript: string;
-  onChange: (script: string) => Promise<void> | void;
+  disabled?: boolean;
+  value?: number;
 
-  options: Script[];
+  onChange: (script: ScriptEntry) => Promise<void> | void;
+
+  options: ScriptEntry[];
+  onDefaultChanged: (script: ScriptEntry) => Promise<void>;
 };
 
 const ScriptChooser = ({
-  disabled,
+  disabled = false,
   value,
   onChange,
   options,
-  defaultScript,
+  onDefaultChanged,
 }: Props) => {
-  const [selected, setSelected] = useState(value || defaultScript);
+  const [selected, setSelected] = useState(value || options[0]?.id);
+  const selectedEntry = options.find((o) => o.id === selected) ?? options[0];
   const onInternalChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
     async (e) => {
-      setSelected(e.target.value);
-      await onChange(e.target.value);
+      const entryId = Number(e.target.value);
+      setSelected(entryId);
+
+      await onChange(options.find((o) => o.id === selected)!);
     },
-    [onChange, setSelected],
+    [onChange, setSelected, options],
   );
+  const onToggleDefaultInternal = useCallback(async () => {
+    const updatedEntry = {
+      ...selectedEntry,
+      isDefault: !selectedEntry?.isDefault,
+    };
+    await Promise.all([onDefaultChanged(updatedEntry), onChange(updatedEntry)]);
+  }, [onChange, onDefaultChanged, selectedEntry]);
+
   return options.length > 1 ? (
     <>
       <dt
@@ -51,7 +69,7 @@ const ScriptChooser = ({
         Scripts:
       </dt>
       <Row className="form-container" as="dd">
-        <Col lg={11} xl={11}>
+        <Col lg={10} xl={10}>
           <Form.Control
             as="select"
             id="stash-interactive-tools-select-funscripts"
@@ -62,11 +80,19 @@ const ScriptChooser = ({
             onChange={onInternalChange}
           >
             {options.map((entry) => (
-              <option value={entry.path} key={entry.label}>
+              <option value={entry.id} key={entry.label}>
                 {entry.label}
               </option>
             ))}
           </Form.Control>
+        </Col>
+        <Col lg={1} xl={1}>
+          <Button
+            className="minimal d-flex align-items-center h-100"
+            onClick={onToggleDefaultInternal}
+          >
+            <Icon icon={selectedEntry?.isDefault ? faHeartSolid : faHeart} />
+          </Button>
         </Col>
       </Row>
     </>

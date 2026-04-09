@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Script } from '../components';
+import { ScriptEntry } from '../components';
 import {
   AnySITHook,
   ConnectionState,
@@ -21,6 +21,7 @@ import {
   generateHeatmap,
   getFunscript,
   HapticInterface,
+  InteractiveState,
   isIvdbTokenUrl,
   replaceHeatMap,
   SITEvent,
@@ -60,13 +61,14 @@ export type InteractiveContext = {
   currentPaths: ScenePaths;
   defaultPaths: ScenePaths;
   state: ConnectionState;
-  entries: Script[];
-  onChange: (script: string) => Promise<void>;
+  entries: ScriptEntry[];
+  onChange: (script?: ScriptEntry) => Promise<void>;
   db: IndexedDBWrapper<DBSchema>;
   preset: ModifierPreset | null;
   presets: ModifierPreset[];
   setPreset: (preset: ModifierPreset | null, toDelete?: boolean) => void;
   device: MutableRefObject<HapticDevice | undefined>;
+  interactiveState: InteractiveState;
   addPipeline<T extends ScriptPipeline>(
     pipeline: T,
     update: true,
@@ -86,6 +88,7 @@ export type InteractiveContext = {
     name: string,
     update: true,
   ): Promise<T | undefined>;
+
   removePipeline(name: string, update?: false | undefined): void;
   removePipeline<T extends ScriptPipeline = ScriptPipeline>(
     name: string,
@@ -148,7 +151,7 @@ function getInteractiveDevice(
 }
 
 export const InteractiveToolsProvider = ({ scene, children }: Props) => {
-  const [entries, setEntries] = useState<Script[]>([]);
+  const [entries, setEntries] = useState<ScriptEntry[]>([]);
 
   const unmodifiedScript = useRef<Funscript>();
 
@@ -167,6 +170,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
   const interactiveState = useRef({
     id: '',
     ivdb: false,
+    entry: null as ScriptEntry | null,
     script: null as Funscript | null,
     blobUrl: null as string | null,
     config: sitPluginConfig,
@@ -179,6 +183,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     interactiveState.current.ivdb = false;
     interactiveState.current.script = null;
     interactiveState.current.blobUrl = null;
+    interactiveState.current.entry = null;
   }
 
   interactiveState.current.hooks = currentHooks;
@@ -300,16 +305,34 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     [getPipeline, updateScript],
   );
   const onChange = useCallback(
-    async (url: string) => {
-      const scriptUrl = currentPaths.src !== url ? url : currentPaths.src;
+    async (scriptEntry?: ScriptEntry) => {
+      const scriptUrl = String(scriptEntry?.path ?? currentPaths.src);
+
       const script = await getFunscript(scriptUrl);
+
+      const entry = entries.find((e) => e.path === scriptUrl) || null;
       unmodifiedScript.current = script;
+
       interactiveState.current.blobUrl = null;
       interactiveState.current.ivdb = isIvdbTokenUrl(scriptUrl);
       interactiveState.current.script = script;
+      if (entry) {
+        const isDefault = scriptEntry?.isDefault ?? entry.isDefault;
+        interactiveState.current.entry = {
+          ...entry,
+          isDefault,
+        };
+        setEntries((items) =>
+          items.map((e, index) => ({
+            ...e,
+            isDefault:
+              e.id === entry.id ? isDefault : isDefault ? false : index == 0,
+          })),
+        );
+      }
       await runScriptPipeline(script, scriptUrl);
     },
-    [currentPaths, runScriptPipeline],
+    [currentPaths, runScriptPipeline, setEntries],
   );
 
   useEffect(() => {
@@ -350,25 +373,19 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       return;
     }
 
-    if (scripts.length) {
+    if (scripts.length && !interactiveState.current.script) {
       logger.debug('Interactive tools initialized', { scripts });
       setEntries(scripts);
-    }
-    if (scripts.length && entries != scripts) {
       interactiveState.current.id = id;
       interactiveState.current.ivdb = false;
       interactiveState.current.script = null;
       interactiveState.current.blobUrl = null;
-      onChange(scripts[0].path).catch(console.error);
+      onChange(scripts[0]).catch(console.error);
     }
-  }, [
-    initializeResults,
-    runScriptPipeline,
-    id,
-    onChange,
-    entries,
-    updatePresets,
-  ]);
+    // if (scripts.length && entries != scripts) {
+
+    //}
+  }, [initializeResults, runScriptPipeline, id, onChange, updatePresets]);
 
   useResumeInteractive(interactive, interactiveState);
   useEffect(() => {
@@ -378,6 +395,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
     });
   }, [state]);
 
+  const isDefault = interactiveState.current.entry?.isDefault ?? true;
   const contextValue = useMemo(
     () => ({
       state,
@@ -397,8 +415,10 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       getPipeline,
       updateScript,
       updateModifiers,
+      interactiveState,
       setHooks,
       hasSetupError,
+      isDefault,
     }),
     [
       state,
@@ -418,6 +438,7 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
       presets,
       setHooks,
       hasSetupError,
+      isDefault,
     ],
   );
   return (

@@ -1,11 +1,10 @@
 import glob
-import importlib
 import os
 import os.path
 import re
 import shutil
 import urllib.parse
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, List, AnyStr, Optional
 
@@ -13,10 +12,11 @@ import requests
 
 if TYPE_CHECKING:
     from assets.config import Config
+    from assets.db import Funscript as FunscriptModel
 
-Funscript: 'Funscript'
+Funscript: type['FunscriptModel']
 
-config: 'Config'
+config: type['Config']
 
 
 @dataclass
@@ -26,15 +26,17 @@ class StashFunscript:
     true_path: str
     is_default: bool = False
     id: Optional[int] = None
+    sort_order: int = 0
 
     @staticmethod
-    def from_db(data: 'Funscript'):
+    def from_db(data: type['FunscriptModel']):
         return StashFunscript(
             id=data.id,
             label=data.name,
             path=data.path,
             true_path=data.true_path,
             is_default=data.is_default,
+            sort_order=data.sort_order,
         )
 
     def for_json(self):
@@ -44,6 +46,7 @@ class StashFunscript:
             'path': self.path,
             'truePath': self.true_path,
             'isDefault': self.is_default,
+            'sortOrder': self.sort_order
         }
 
 
@@ -93,8 +96,10 @@ def filter_out_false_versions(base_name, file):
 
 
 def deterministic_sort_scripts(scripts: List[StashFunscript]):
-    return sorted(scripts, key=lambda x: (x.label != 'Default', x.label))
-
+    return sorted(
+        scripts,
+        key=lambda x: (0 if x.is_default else 1, x.sort_order),
+    )
 
 def get_funscripts(file, scene_id) -> List[Path]:
     filename = os.path.basename(file)
@@ -145,10 +150,9 @@ def ensure_funscript_records(auto_discovered_scripts: List[StashFunscript],
 
 def analyze_file(file: str, scene_id: str):
     script_file_paths = get_funscripts(file, scene_id)
-    auto_discovered_scripts = deterministic_sort_scripts(
-        [map_script(script_file_path, file, scene_id) for script_file_path in
-         script_file_paths])
-    scripts = ensure_funscript_records(auto_discovered_scripts, scene_id)
+    auto_discovered_scripts =  [map_script(script_file_path, file, scene_id) for script_file_path in
+         script_file_paths]
+    scripts = deterministic_sort_scripts(ensure_funscript_records(auto_discovered_scripts, scene_id))
 
     if 'omit_default' in config.FRAGMENT['args']:
         scripts = list(
@@ -227,7 +231,8 @@ def analyze_scene():
 def run(c: 'Config'):
     global config, Funscript
     config = c
-    Funscript = importlib.import_module('db').Funscript
+
+    Funscript = c.Funscript()
 
     scripts = analyze_scene()
     config.log.exit({'scripts': scripts})

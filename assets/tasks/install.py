@@ -113,7 +113,7 @@ def run(c:'Config'):
     global config
     config = c
     try:
-        ensure_requirements("stashapp-tools==0.2.58","PIL:pillow","peewee==4.0.2")
+        ensure_requirements("stashapp-tools==0.2.58","PIL:pillow","peewee==4.0.2","pydantic==2.12.5")
         config.log.exit({'installed':True})
     except Exception as e:
         config.log.exit({'installed':False,'error':f"Error importing stashapi.log: {e}"})
