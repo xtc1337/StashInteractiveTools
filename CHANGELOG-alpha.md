@@ -1,3 +1,9 @@
+## [1.2.0-alpha.3](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.2...v1.2.0-alpha.3) (2026-04-10)
+
+### Bug Fixes
+
+* lazy loading of python db module ([6812b4a](github.com/xtc1337/StashInteractiveTools/commit/6812b4a0e96e5b63e5c66fa8f217e586657f05b2))
+
 ## [1.2.0-alpha.2](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.1...v1.2.0-alpha.2) (2026-04-09)
 
 * reorganized interactive hooks ([ea66bc3](github.com/xtc1337/StashInteractiveTools/commit/ea66bc3911052da243ac00dc96f1a112512fbb59))
