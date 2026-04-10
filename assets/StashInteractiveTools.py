@@ -12,8 +12,7 @@ sys.path.insert(0, str(current_path.parent/"automatic_dependencies"))
 def main():
     config = get_config()
     config.log.debug(f"Running task paths:'{current_path.parent}'")
-    from db import ensure_db
-    ensure_db()
+
     try:
       task = config.get_task(config.mode)
       if hasattr(task,'run'):

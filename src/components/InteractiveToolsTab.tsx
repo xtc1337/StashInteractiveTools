@@ -15,17 +15,18 @@ import { ModifyScript } from './ModifyScript';
 import { DebugConsoleModal, useDebugConsole } from './DebugConsoleModal';
 import { Button } from 'react-bootstrap';
 import { ConnectionState } from '../utils';
+import { components } from '../api';
 
 type Props = {
   scene: SceneDataFragment;
 };
+const { LoadingIndicator } = components;
 
 const DEFAULT_ERROR_MESSAGE = 'Setup failed. Please check your configuration.';
 const InteractiveToolsContent = () => {
   const { onChange, entries, interactiveState, hasSetupError, state } =
     useInteractiveTools();
   const debugHandle = useDebugConsole();
-  const [verifyingInstall, setVerifyingInstall] = React.useState(false);
   const [runInstallBackendTask, installBackendTaskResults] =
     useInteractiveBackend<{ installed?: boolean; error?: string }>(
       InteractiveBackendOperation.INSTALL,
@@ -35,16 +36,13 @@ const InteractiveToolsContent = () => {
     interactiveState.current.id,
   );
   const [errorMessage] = React.useState<string>(DEFAULT_ERROR_MESSAGE);
-  const onVerifyInstall = useCallback(async () => {
-    setVerifyingInstall(true);
-    runInstallBackendTask()
-      .then(() => {
-        setVerifyingInstall(false);
-      })
-      .catch(() => {
-        setVerifyingInstall(false);
-      });
-  }, [setVerifyingInstall, runInstallBackendTask]);
+  const onVerifyInstall = useCallback(() => {
+    return runInstallBackendTask();
+  }, [runInstallBackendTask]);
+
+  const onRefresh = useCallback(async () => {
+    window.location.reload();
+  }, []);
 
   const onDefaultChanged = useCallback(
     async (entry: ScriptEntry) => {
@@ -60,12 +58,20 @@ const InteractiveToolsContent = () => {
   return (
     <>
       {hasSetupError ? (
-        <div className="setup-error">
-          {errorMessage}
-          <br />
-          <Button onClick={onVerifyInstall} disabled={verifyingInstall}>
-            Verify Install
-          </Button>
+        <div className="setup-error d-flex justify-content-center flex-wrap">
+          <div className="w-100 text-center">{errorMessage}</div>
+
+          {installBackendTaskResults.loading ? (
+            <LoadingIndicator />
+          ) : installBackendTaskResults.data?.installed ? (
+            <>
+              All Dependencies installed, refresh page. If problems persist
+              reach out on discord,github or eroscript(@xtc).
+              <Button onClick={onRefresh}>Refresh</Button>
+            </>
+          ) : (
+            <Button onClick={onVerifyInstall}>Verify Install</Button>
+          )}
           {installBackendTaskResults?.data?.error && (
             <div className="error-message">
               {installBackendTaskResults.data?.error}

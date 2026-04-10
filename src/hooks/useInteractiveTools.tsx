@@ -310,26 +310,26 @@ export const InteractiveToolsProvider = ({ scene, children }: Props) => {
 
       const script = await getFunscript(scriptUrl);
 
-      const entry = entries.find((e) => e.path === scriptUrl) || null;
       unmodifiedScript.current = script;
 
       interactiveState.current.blobUrl = null;
       interactiveState.current.ivdb = isIvdbTokenUrl(scriptUrl);
       interactiveState.current.script = script;
-      if (entry) {
+
+      setEntries((items) => {
+        const entry = items.find((e) => e.path === scriptUrl) || null;
+        if (!entry) return items;
         const isDefault = scriptEntry?.isDefault ?? entry.isDefault;
         interactiveState.current.entry = {
           ...entry,
           isDefault,
         };
-        setEntries((items) =>
-          items.map((e, index) => ({
-            ...e,
-            isDefault:
-              e.id === entry.id ? isDefault : isDefault ? false : index == 0,
-          })),
-        );
-      }
+        return items.map((e, index) => ({
+          ...e,
+          isDefault:
+            e.id === entry.id ? isDefault : isDefault ? false : index == 0,
+        }));
+      });
       await runScriptPipeline(script, scriptUrl);
     },
     [currentPaths, runScriptPipeline, setEntries],

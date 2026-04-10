@@ -55,7 +55,9 @@ class Config:
 
     @staticmethod
     def Funscript() -> 'Funscript':
-        return importlib.import_module('db').Funscript
+        db = importlib.import_module('db')
+        db.ensure_db()
+        return db.Funscript
 
     def get_task(self, name=None):
         if name is None:

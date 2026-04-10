@@ -18,7 +18,11 @@ import YAML from 'yaml';
 import 'dotenv/config';
 import { Writable } from 'stream';
 
-const ASSETS_TO_OMIT = ['payload.json', 'stash_interactive_tools.db'];
+const ASSETS_TO_OMIT = [
+  'payload.json',
+  'stash_interactive_tools.db',
+  '__pycache__',
+];
 const META_FILE_PATH = 'dist/StashInteractiveTools.yml';
 const nullWriteStream = new Writable({
   write(chunk, encoding, callback) {
@@ -132,6 +136,8 @@ const plugins = [
           '!assets/payload.json',
           '!assets/stash_interactive_tools.db',
           '!assets/tasks',
+          '!assets/**/__pycache__',
+          '!assets/**/*.pyc',
         ],
 
         dest: 'dist/',

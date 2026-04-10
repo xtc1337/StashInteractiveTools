@@ -48,7 +48,7 @@ const ScriptChooser = ({
       const entryId = Number(e.target.value);
       setSelected(entryId);
 
-      await onChange(options.find((o) => o.id === selected)!);
+      await onChange(options.find((o) => o.id === entryId)!);
     },
     [onChange, setSelected, options],
   );
