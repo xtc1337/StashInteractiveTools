@@ -14,6 +14,7 @@ module.exports = {
       {
         preset: 'conventionalcommits',
         releaseRules: [
+          { type: 'build', release: 'patch' },
           { type: 'docs', scope: 'README', release: 'patch' },
           { type: 'refactor', release: 'patch' },
           { type: 'style', release: 'patch' },

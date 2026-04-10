@@ -139,8 +139,9 @@ const zipPlugin = {
     };
 
     logger.info(
-      `Updated stash.yml \nversion:${stashContents.version}\npath:${downloadUrl}\n${stashContents.sha256}`,
+      `Updated ${stashFiles} \nversion:${stashContents.version}\npath:${downloadUrl}\n${stashContents.sha256}`,
     );
+
     if (!options.dryRun) {
       await Promise.all(
         stashFiles.map(async (stashFile) => {
@@ -150,8 +151,6 @@ const zipPlugin = {
           );
         }),
       );
-    } else {
-      logger.info();
     }
   },
 };

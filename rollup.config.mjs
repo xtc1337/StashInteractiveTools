@@ -14,6 +14,9 @@ import strip from '@rollup/plugin-strip';
 import semanticRelease from 'semantic-release';
 import replace from '@rollup/plugin-replace';
 import YAML from 'yaml';
+import debug from 'debug';
+
+debug.enable('semantic-release:*');
 
 import 'dotenv/config';
 import { Writable } from 'stream';
@@ -23,7 +26,7 @@ const ASSETS_TO_OMIT = [
   'stash_interactive_tools.db',
   '__pycache__',
 ];
-const META_FILE_PATH = 'dist/StashInteractiveTools.yml';
+const META_FILE_PATH = path.resolve('./dist/StashInteractiveTools.yml');
 const nullWriteStream = new Writable({
   write(chunk, encoding, callback) {
     // Do nothing with the chunk
@@ -39,51 +42,63 @@ const MANIFEST_ERROR_LOG = {
 function updateMetadataVersionPlugin() {
   return {
     name: 'update-metadata-version-plugin',
-    async buildEnd() {
-      const results = await semanticRelease(
-        {
-          dryRun: false,
+    generateBundle: {
+      sequential: true,
+      order: 'pre',
+      handler: async (_, bundle) => {
+        const results = await semanticRelease(
+          {
+            debug: true,
+            dryRun: true,
 
-          branches: [
-            { name: 'main' },
-            { name: 'next', prerelease: true },
-            { name: 'alpha', prerelease: true },
-          ],
-          plugins: [
-            [
-              '@semantic-release/commit-analyzer',
-              {
-                preset: 'conventionalcommits',
-                releaseRules: [
-                  { type: 'docs', scope: 'README', release: 'patch' },
-                  { type: 'refactor', release: 'patch' },
-                  { type: 'style', release: 'patch' },
-                ],
-              },
+            branches: [
+              { name: 'main' },
+              { name: 'next', prerelease: true },
+              { name: 'alpha', prerelease: true },
             ],
-          ],
-        },
-        {
-          stdout: nullWriteStream,
-          error: nullWriteStream,
-        },
-      );
-      if (!results) {
-        console.log('Skipping updating dist/StashInteractiveTools.yml');
-        return;
-      }
-      console.log(
-        `Updating StashInteractiveTools.yml -> ${results.nextRelease.version}`,
-      );
+            plugins: [
+              [
+                '@semantic-release/commit-analyzer',
+                {
+                  preset: 'conventionalcommits',
+                  releaseRules: [
+                    { type: 'build', release: 'patch' },
+                    { type: 'docs', scope: 'README', release: 'patch' },
+                    { type: 'refactor', release: 'patch' },
+                    { type: 'style', release: 'patch' },
+                  ],
+                },
+              ],
+            ],
+          },
+          {
+            stdout: process.stdout,
+            error: process.stderr,
+          },
+        );
+        if (!results) {
+          console.log(`Skipping updating ${META_FILE_PATH}`);
+          return;
+        }
+        console.log(
+          `Updating ${META_FILE_PATH} -> ${results.nextRelease.version}`,
+        );
 
-      fs.writeFileSync(
-        META_FILE_PATH,
-        YAML.stringify({
+        const value = {
           ...YAML.parse(fs.readFileSync(META_FILE_PATH, 'utf8')),
           errLog: MANIFEST_ERROR_LOG[results.nextRelease.channel],
           version: results.nextRelease.version,
-        }),
-      );
+        };
+        for (const [fileName, chunkOrAsset] of Object.entries(bundle)) {
+          if (
+            chunkOrAsset.type === 'asset' &&
+            fileName === 'StashInteractiveTools.yml'
+          ) {
+            chunkOrAsset.source = YAML.stringify(value);
+          }
+        }
+        // fs.writeFileSync(META_FILE_PATH, YAML.stringify(value));
+      },
     },
   };
 }
