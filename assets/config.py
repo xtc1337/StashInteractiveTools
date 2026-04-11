@@ -53,12 +53,26 @@ class Config:
 
     SUITE_DIR = Path(__file__).parent.parent
 
+
+    @staticmethod
+    def ensure_db():
+        mod = importlib.import_module('db')
+        mod.ensure_db()
+        return mod
+    @staticmethod
+    def db():
+      return Config.ensure_db().db
+
     @staticmethod
     def Funscript() -> 'Funscript':
-        db = importlib.import_module('db')
-        db.ensure_db()
-        return db.Funscript
+       return Config.ensure_db().Funscript
+    @staticmethod
+    def  SchemaMigration() -> 'SchemaMigration':
+      return Config.ensure_db().SchemaMigration
 
+    @staticmethod
+    def migrations():
+        return importlib.import_module('migrations').MIGRATIONS
     def get_task(self, name=None):
         if name is None:
             name = self.mode

@@ -61,13 +61,9 @@ settings:
     type: BOOLEAN
 tasks:
   - name: 'Install'
-    description: Install all dependencies
+    description: Install all dependencies & Run migrations
     defaultArgs:
       mode: install
-  - name: 'init'
-    description: Build information about interactive scene
-    defaultArgs:
-      mode: init
   - name: 'tag'
     description: Apply Tag
     defaultArgs:

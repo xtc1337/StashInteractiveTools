@@ -10,6 +10,7 @@ import subprocess
 import re
 from pathlib import Path
 from inspect import stack
+import traceback
 
 
 
@@ -114,11 +115,15 @@ def run(c:'Config'):
     config = c
     try:
         ensure_requirements("stashapp-tools==0.2.58","PIL:pillow","peewee==4.0.2","pydantic==2.12.5")
-        config.log.exit({'installed':True})
+
     except Exception as e:
         config.log.exit({'installed':False,'error':f"Error importing stashapi.log: {e}"})
-
-        return
+    try:
+        c.get_task('migrate').run(c)
+    except Exception as e:
+        error = traceback.format_exc()
+        config.log.exit({'installed':False,'error':f"Error running migration: {error}"})
+    config.log.exit({'installed':True})
 
 
 

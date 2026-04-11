@@ -101,6 +101,7 @@ def deterministic_sort_scripts(scripts: List[StashFunscript]):
         key=lambda x: (0 if x.is_default else 1, x.sort_order),
     )
 
+
 def get_funscripts(file, scene_id) -> List[Path]:
     filename = os.path.basename(file)
     file_dir = Path(os.path.dirname(file))
@@ -124,7 +125,8 @@ def insert_funscript_records(
 
         for i, f in enumerate(to_insert)
     ]
-    return list(Funscript.insert_many(rows).returning(Funscript).execute())
+    return list(Funscript.insert_many(rows).on_conflict_ignore().returning(
+        Funscript).execute())
 
 
 def ensure_funscript_records(auto_discovered_scripts: List[StashFunscript],
@@ -141,18 +143,22 @@ def ensure_funscript_records(auto_discovered_scripts: List[StashFunscript],
                auto_discovered_scripts))
     config.log.debug(f'Auto discovered scripts: ${auto_discovered_scripts}')
     if len(newly_discovered) > 0:
-        list(known_scripts).append(
-            insert_funscript_records(newly_discovered, scene_id,
-                                     len(known_scripts)))
+        newly_inserted = insert_funscript_records(newly_discovered, scene_id,
+                                             len(known_scripts))
+        config.log.debug(f'Newly Inserted: {newly_inserted}')
+        known_scripts.extend( newly_inserted)
+
     config.log.debug(f'Known scripts: {known_scripts}')
     return [StashFunscript.from_db(script) for script in known_scripts]
 
 
 def analyze_file(file: str, scene_id: str):
     script_file_paths = get_funscripts(file, scene_id)
-    auto_discovered_scripts =  [map_script(script_file_path, file, scene_id) for script_file_path in
-         script_file_paths]
-    scripts = deterministic_sort_scripts(ensure_funscript_records(auto_discovered_scripts, scene_id))
+    auto_discovered_scripts = [map_script(script_file_path, file, scene_id) for
+                               script_file_path in
+                               script_file_paths]
+    scripts = deterministic_sort_scripts(
+        ensure_funscript_records(auto_discovered_scripts, scene_id))
 
     if 'omit_default' in config.FRAGMENT['args']:
         scripts = list(

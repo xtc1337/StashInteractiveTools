@@ -7,6 +7,8 @@ from config import get_config
 
 current_path = Path(__file__).resolve()
 sys.path.insert(0, str(current_path.parent))
+sys.path.insert(0, str(current_path.parent/"tasks"))
+sys.path.insert(0, str(current_path.parent/"tasks"/"migrations"))
 sys.path.insert(0, str(current_path.parent/"automatic_dependencies"))
 
 def main():

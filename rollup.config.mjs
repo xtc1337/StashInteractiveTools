@@ -15,11 +15,10 @@ import semanticRelease from 'semantic-release';
 import replace from '@rollup/plugin-replace';
 import YAML from 'yaml';
 import debug from 'debug';
-
-debug.enable('semantic-release:*');
-
 import 'dotenv/config';
 import { Writable } from 'stream';
+
+debug.enable('semantic-release:*');
 
 const ASSETS_TO_OMIT = [
   'payload.json',
@@ -134,6 +133,15 @@ function emitAssetsPlugin(assetsDir) {
 }
 
 const prod = process.env.NODE_ENV === 'production';
+
+const OMITS = [
+  'payload.json',
+  'stash_interactive_tools.db',
+  '**/__pycache__',
+  '**.pyc',
+];
+const TO_COPY = ['assets', 'assets/tasks', 'assets/tasks/migrations'];
+
 const plugins = [
   peerDepsExternal(),
   resolve({
@@ -151,6 +159,7 @@ const plugins = [
           '!assets/payload.json',
           '!assets/stash_interactive_tools.db',
           '!assets/tasks',
+          '!assets/migrations',
           '!assets/**/__pycache__',
           '!assets/**/*.pyc',
         ],
@@ -158,8 +167,20 @@ const plugins = [
         dest: 'dist/',
       },
       {
-        src: ['assets/tasks/**'],
+        src: [
+          'assets/tasks/**',
+          '!assets/tasks/**/__pycache__',
+          '!assets/tasks/**/*.pyc',
+        ],
         dest: 'dist/tasks',
+      },
+      {
+        src: [
+          'assets/migrations/**',
+          '!assets/migrations/**/__pycache__',
+          '!assets/migrations/**/*.pyc',
+        ],
+        dest: 'dist/migrations',
       },
     ],
   }),
