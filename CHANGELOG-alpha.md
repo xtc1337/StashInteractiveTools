@@ -1,3 +1,11 @@
+## [1.2.0-alpha.5](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.4...v1.2.0-alpha.5) (2026-04-16)
+
+### Bug Fixes
+
+* addressed duplicate db entries ([a20a595](github.com/xtc1337/StashInteractiveTools/commit/a20a595c0b5570e9f1dba025f9357461e47a2014))
+* ensure that `MainNavBar.UtilityItems` includes the children ([269a704](github.com/xtc1337/StashInteractiveTools/commit/269a704c7073326078cf3403538a8309a03113d8))
+* ensure that `MainNavBar.UtilityItems` includes the children ([004ef4d](github.com/xtc1337/StashInteractiveTools/commit/004ef4d084a237ffb209825dd2de62f3b16e0fab))
+
 ## [1.2.0-alpha.4](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.3...v1.2.0-alpha.4) (2026-04-10)
 
 ## [1.2.0-alpha.3](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.2...v1.2.0-alpha.3) (2026-04-10)
