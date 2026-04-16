@@ -1,10 +1,4 @@
-import React, {
-  PropsWithChildren,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   addSITEventListener,
   ConnectionState,
@@ -27,7 +21,7 @@ const SHOULD_ANIMATE_CONNECTION_STATES = [
 ];
 
 const logger = createDebugConsole("'MainNavBar.UtilityItems");
-export const UtilityItems = (props: PropsWithChildren) => {
+export const UtilityItems = () => {
   const [connectionState, setConnectionState] = useState<ConnectionState>(
     ConnectionState.Missing,
   );
@@ -106,7 +100,6 @@ export const UtilityItems = (props: PropsWithChildren) => {
 
   return (
     <>
-      {props.children}
       <div className="stash-interactive-tools-utility-item">
         <Button
           className="nav-utility minimal"

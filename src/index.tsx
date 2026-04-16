@@ -19,38 +19,35 @@ interface SceneFileInfoPanelProps {
 
 patch.after(
   'ScenePage.Tabs',
-  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
+  (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
     if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
-    return (
-      <>
-        {props.children}
-        <Nav.Item>
-          <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
-        </Nav.Item>
-      </>
-    );
+    return [
+      ...args,
+
+      <Nav.Item>
+        <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
+      </Nav.Item>,
+    ];
   },
 );
 
 patch.after(
   'ScenePage.TabContent',
-  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
+  (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
     if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
-    return (
-      <>
-        {props.children}
-        <Tab.Pane
-          eventKey="scene-interactive-panel"
-          className="stash-interactive-tools-tab"
-        >
-          <InteractiveToolsTab scene={props.scene} />
-        </Tab.Pane>
-      </>
-    );
+    return [
+      ...args,
+      <Tab.Pane
+        eventKey="scene-interactive-panel"
+        className="stash-interactive-tools-tab"
+      >
+        <InteractiveToolsTab scene={props.scene} />
+      </Tab.Pane>,
+    ];
   },
 );
 
@@ -62,11 +59,6 @@ patch.instead(
   },
 );
 
-patch.after('MainNavBar.UtilityItems', (props) => {
-  return (
-    <>
-      {props.children}
-      <UtilityItems {...props} />
-    </>
-  );
+patch.after('MainNavBar.UtilityItems', (_, ...args) => {
+  return [...args, <UtilityItems />];
 });
