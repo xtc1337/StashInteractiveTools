@@ -63,5 +63,10 @@ patch.instead(
 );
 
 patch.after('MainNavBar.UtilityItems', (props) => {
-  return <UtilityItems {...props} />;
+  return (
+    <>
+      {props.children}
+      <UtilityItems {...props} />
+    </>
+  );
 });
