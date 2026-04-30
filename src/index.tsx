@@ -19,12 +19,12 @@ interface SceneFileInfoPanelProps {
 
 patch.after(
   'ScenePage.Tabs',
-  (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
+  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
     if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
     return [
-      ...args,
+      props.children,
 
       <Nav.Item>
         <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
@@ -35,12 +35,13 @@ patch.after(
 
 patch.after(
   'ScenePage.TabContent',
-  (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
+  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
     if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
+
     return [
-      ...args,
+      props.children,
       <Tab.Pane
         eventKey="scene-interactive-panel"
         className="stash-interactive-tools-tab"
@@ -59,6 +60,6 @@ patch.instead(
   },
 );
 
-patch.after('MainNavBar.UtilityItems', (_, ...args) => {
-  return [...args, <UtilityItems />];
+patch.after('MainNavBar.UtilityItems', (props, ...args) => {
+  return [...args, <UtilityItems {...props} />];
 });
