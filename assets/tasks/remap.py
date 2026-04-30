@@ -499,7 +499,8 @@ def remap_scenes():
             break
         for scene in scenes:
             file = scene['files'][0]['path']
-            funscripts = init_task.get_funscripts(file)
+            scene_id = scene['id']
+            funscripts = init_task.get_funscripts(file,scene_id)
             config.log.debug(f"Scanning {file} with {len(funscripts)} funscript{'s' if len(funscripts) > 1 else ''}")
             remap_scene(scene, funscripts, genpath, remapconfig)
         config.log.progress(seen/total)
