@@ -1,3 +1,10 @@
+## [1.2.0-alpha.6](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.5...v1.2.0-alpha.6) (2026-04-30)
+
+### Bug Fixes
+
+* ensure that `MainNavBar.UtilityItems` includes the children , correctly this time ([1873f70](github.com/xtc1337/StashInteractiveTools/commit/1873f70d152fce2005f283481830283ed1f0df9d))
+* update remap to call `init_task.get_funscripts` with correct arguments after refactor ([5f0b88f](github.com/xtc1337/StashInteractiveTools/commit/5f0b88f1196e69c76d04d0506dd1d9622fbb3437))
+
 ## [1.2.0-alpha.5](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.4...v1.2.0-alpha.5) (2026-04-16)
 
 ### Bug Fixes
