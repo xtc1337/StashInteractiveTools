@@ -99,16 +99,14 @@ export const UtilityItems = () => {
         : 'static';
 
   return (
-    <>
-      <div className="stash-interactive-tools-utility-item">
-        <Button
-          className="nav-utility minimal"
-          title={'toggle interactive'}
-          onClick={onToggleInteractive}
-        >
-          <TheHandyIcon size={20} state={iconState} />
-        </Button>
-      </div>
-    </>
+    <div className="stash-interactive-tools-utility-item">
+      <Button
+        className="nav-utility minimal"
+        title={'toggle interactive'}
+        onClick={onToggleInteractive}
+      >
+        <TheHandyIcon size={20} state={iconState} />
+      </Button>
+    </div>
   );
 };

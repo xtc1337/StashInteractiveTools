@@ -5,7 +5,11 @@ import React, { PropsWithChildren } from 'react';
 import { InteractiveToolsTab } from './components';
 import { Nav, Tab } from 'react-bootstrap';
 import { patch } from './api';
-import { DEFAULT_NAMESPACE, enableInteractiveTools } from './utils';
+import {
+  createDebugConsole,
+  DEFAULT_NAMESPACE,
+  enableInteractiveTools,
+} from './utils';
 import {
   PluginSettings,
   PluginSettingsProps,
@@ -16,13 +20,18 @@ import { UtilityItems } from './components/UtilityItems';
 interface SceneFileInfoPanelProps {
   scene: SceneDataFragment;
 }
+const logger = createDebugConsole('index');
 
 patch.after(
   'ScenePage.Tabs',
-  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
+  (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
     if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
+    logger.info('ScenePage.Tabs:', {
+      children: props.children,
+      args,
+    });
     return [
       props.children,
 
@@ -35,10 +44,14 @@ patch.after(
 
 patch.after(
   'ScenePage.TabContent',
-  (props: PropsWithChildren<SceneFileInfoPanelProps>) => {
+  (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
     if (!enableInteractiveTools(props.scene)) {
       return props.children;
     }
+    logger.info('ScenePage.TabContent', {
+      children: props.children,
+      args,
+    });
 
     return [
       props.children,
@@ -61,5 +74,13 @@ patch.instead(
 );
 
 patch.after('MainNavBar.UtilityItems', (props, ...args) => {
-  return [...args, <UtilityItems {...props} />];
+  logger.info('MainNavBar.UtilityItems', {
+    props,
+    args,
+  });
+
+  return [
+    ...args.filter((c) => c && '$$typeof' in c),
+    <UtilityItems {...props} />,
+  ];
 });
