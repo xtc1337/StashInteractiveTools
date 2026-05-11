@@ -3,12 +3,28 @@ import { FunMapper } from 'funscript-utils';
 import { EventBus, utils } from '../../api';
 import { Funscript, HapticDevice } from 'ive-connect';
 import { SITEvent, SITEventData, SITEventsToDispatch } from './types';
+import { snakeCase } from 'lodash-es';
 
 const canvas = document.createElement('canvas');
 canvas.width = 1280;
 canvas.height = 60;
 const rootVars = document.documentElement;
 
+export function deepSnakeCase<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => deepSnakeCase(item)) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).map(
+      ([key, val]) => [snakeCase(key), deepSnakeCase(val)] as const,
+    );
+
+    return Object.fromEntries(entries) as T;
+  }
+
+  return value;
+}
 export function replaceHeatMap(url: string) {
   rootVars.style.setProperty(
     '--stash-interactive-tools-heatmap',

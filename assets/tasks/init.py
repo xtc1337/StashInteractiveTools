@@ -234,11 +234,14 @@ def analyze_scene():
     return scripts
 
 
-def run(c: 'Config'):
+def init(c: 'Config'):
     global config, Funscript
     config = c
-
     Funscript = c.Funscript()
+
+def run(c: 'Config'):
+    global config, Funscript
+    init(c)
 
     scripts = analyze_scene()
     config.log.exit({'scripts': scripts})

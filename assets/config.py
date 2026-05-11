@@ -47,7 +47,9 @@ class Config:
     ENABLE_TAGGING: bool = False
     TAG_NAME: str = '[SIT: Multi-Script]'
     NAMING_CONVENTION: str = ''
+    BACKUP_ON_SCENES_DELETE:bool = True
     HANDY_TOKEN: str = ''
+    BACKUP_DIRECTORY:str
     PAYLOAD_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                 'payload.json')
 
@@ -77,7 +79,10 @@ class Config:
         if name is None:
             name = self.mode
         task_module = f'tasks.{name}'
-        return importlib.import_module(task_module)
+        task = importlib.import_module(task_module)
+        if hasattr(task,'init'):
+            task.init(self)
+        return task
 
     def bind(self, model_cls: type[T],
              resolves: dict[str, FieldResolver] | None = None) -> T:
@@ -123,6 +128,9 @@ def get_config():
     stash = get_stash_client()
 
     config.PLUGIN_DIR = config.FRAGMENT["server_connection"]['PluginDir']
+    config.BACKUP_DIRECTORY = os.path.join(config.PLUGIN_DIR, '.backup')  # type: ignore
+    if not os.path.exists(config.BACKUP_DIRECTORY):
+        os.makedirs(config.BACKUP_DIRECTORY)
     origin = config.FRAGMENT["args"].get("origin",
                                          stash.url.replace('/graphql', ''))
     config.PLUGIN_HTTP_ASSETS_PATH = f'{origin}/plugin/StashInteractiveTools/assets'
@@ -131,7 +139,8 @@ def get_config():
     c = stash.find_plugin_config(config.ID)
     config.ENABLE_TAGGING = bool(c.get('enable_tagging'))
     tag_name = c.get('multi_script_tag')
-    config.NAMING_CONVENTION = c.get('naming_convention')
+    config.NAMING_CONVENTION = c.get('naming_convention','')
+    config.BACKUP_ON_SCENES_DELETE = bool(c.get('backupOnScenesDelete',False))
     if not tag_name:
         tag_name = '[SIT: Multi-Script]'
     config.TAG_NAME = tag_name

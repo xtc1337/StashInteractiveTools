@@ -24,6 +24,9 @@ settings:
   disableHapticInterface:
     type: BOOLEAN
     displayName: Disable the use of the Haptic Interface
+  backupOnScenesDelete:
+    type: BOOLEAN
+    displayName: Backup scripts on stash scene delete (UI only)
   hapticInterface:
     type: STRING
     displayName: Choose Haptic Interface to use

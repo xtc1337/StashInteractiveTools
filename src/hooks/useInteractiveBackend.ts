@@ -2,8 +2,9 @@ import useInteractive = PluginApi.hooks.useInteractive;
 import { useRunPluginOperationMutation } from '../generated-graphql';
 import { ScriptEntry } from '../components';
 import { useCallback, useMemo } from 'react';
-import { snakeCase, merge } from 'lodash-es';
+import { merge } from 'lodash-es';
 import { A } from 'ts-toolbelt';
+import { deepSnakeCase } from '../utils';
 
 export enum InteractiveBackendOperation {
   INIT = 'init',
@@ -11,21 +12,6 @@ export enum InteractiveBackendOperation {
   MANAGE = 'manage',
 }
 
-function deepSnakeCase<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map((item) => deepSnakeCase(item)) as T;
-  }
-
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).map(
-      ([key, val]) => [snakeCase(key), deepSnakeCase(val)] as const,
-    );
-
-    return Object.fromEntries(entries) as T;
-  }
-
-  return value;
-}
 type MaybeArg<A> = [A] extends [never] ? [] : [extraArgs: A];
 export const useInteractiveBackend = <T, A = never>(
   operation: InteractiveBackendOperation,

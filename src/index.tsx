@@ -1,12 +1,16 @@
 import './style.scss';
 
-import { SceneDataFragment } from './generated-graphql';
+import {
+  RunPluginOperationDocument,
+  SceneDataFragment,
+} from './generated-graphql';
 import React, { PropsWithChildren } from 'react';
 import { InteractiveToolsTab } from './components';
 import { Nav, Tab } from 'react-bootstrap';
 import { patch } from './api';
 import {
   createDebugConsole,
+  deepSnakeCase,
   DEFAULT_NAMESPACE,
   enableInteractiveTools,
 } from './utils';
@@ -16,6 +20,9 @@ import {
 } from './components/PluginSettings';
 import './utils/interactive/client-provider';
 import { UtilityItems } from './components/UtilityItems';
+import { ApolloClient, ApolloLink } from '@apollo/client';
+import type { NormalizedCacheObject } from '@apollo/client/cache/inmemory/types';
+import getClient = PluginApi.utils.StashService.getClient;
 
 interface SceneFileInfoPanelProps {
   scene: SceneDataFragment;
@@ -84,3 +91,33 @@ patch.after('MainNavBar.UtilityItems', (props, ...args) => {
     <UtilityItems {...props} />,
   ];
 });
+
+const interceptLink = new ApolloLink((operation, forward) => {
+  if (operation.operationName != 'ScenesDestroy') return forward(operation);
+  if (!operation.variables.delete_file) return forward(operation);
+  const variables = operation.variables;
+
+  operation.operationName = 'RunPluginOperation';
+  operation.query = RunPluginOperationDocument;
+  operation.variables = {
+    plugin_id: 'StashInteractiveTools',
+    args: {
+      mode: 'manage',
+      action: 'DELETE_SCENES',
+      payload: deepSnakeCase(variables),
+    },
+  };
+
+  return forward(operation).map((response) => {
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        scenesDestroy: response.data?.runPluginOperation.scenesDestroy,
+      },
+    };
+  });
+});
+
+const client: ApolloClient<NormalizedCacheObject> = getClient();
+client.setLink(ApolloLink.from([interceptLink, client.link]));
