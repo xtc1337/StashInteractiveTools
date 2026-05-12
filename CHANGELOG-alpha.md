@@ -1,3 +1,13 @@
+## [1.2.0-alpha.7](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.6...v1.2.0-alpha.7) (2026-05-12)
+
+### Features
+
+* added plugin setting to enable backing up scripts on delete in ui ([eab5870](github.com/xtc1337/StashInteractiveTools/commit/eab587055d7ec8d1ee828164b9b4fff10fb4d36b))
+
+### Bug Fixes
+
+* address plugin crashing when merging utility items ([1214aad](github.com/xtc1337/StashInteractiveTools/commit/1214aad37983fba581a84419e425e57f680cd3ef))
+
 ## [1.2.0-alpha.6](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.5...v1.2.0-alpha.6) (2026-04-30)
 
 ### Bug Fixes
