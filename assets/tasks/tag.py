@@ -37,7 +37,8 @@ def tag_scenes():
             break
         for scene in scenes:
             file = scene['files'][0]['path']
-            funcount = len(init_task.get_funscripts(file))
+            scene_id = scene['id']
+            funcount = len(init_task.get_funscripts(file,scene_id))
             config.log.debug(f'Scanning {file} with {funcount} funscripts')
             if funcount > 1:
                 if {'id': tag_id} not in scene['tags']:
