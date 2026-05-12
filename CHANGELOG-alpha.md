@@ -1,3 +1,9 @@
+## [1.2.0-alpha.8](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.7...v1.2.0-alpha.8) (2026-05-12)
+
+### Bug Fixes
+
+* update call for `get_funscripts` when calling `tag` task ([90959d5](github.com/xtc1337/StashInteractiveTools/commit/90959d5b0ee297990efbea1b875e248d1d937668))
+
 ## [1.2.0-alpha.7](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.6...v1.2.0-alpha.7) (2026-05-12)
 
 ### Features
