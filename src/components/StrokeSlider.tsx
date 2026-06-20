@@ -10,6 +10,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Form } from 'react-bootstrap';
 
 import { hooks } from '../api';
+import { toDeviceConfig } from '../utils/interactive/client';
 
 const StrokeSlider = () => {
   const { initialised } = hooks.useInteractive();
@@ -28,9 +29,11 @@ const StrokeSlider = () => {
         slideInfo,
       }));
 
-      await device.current!.updateConfig({
-        stroke: slideInfo,
-      });
+      if (device.current) {
+        await toDeviceConfig(device.current, {
+          stroke: slideInfo,
+        });
+      }
     },
     500,
     { leading: true },

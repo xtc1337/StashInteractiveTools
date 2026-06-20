@@ -197,3 +197,18 @@ export class DefaultHandyClient implements HapticDevice {
     throw new Error('Method not implemented.');
   }
 }
+
+export async function toDeviceConfig(
+  device: HapticDevice,
+  config: Record<string, unknown>,
+) {
+  if (device.id === 'buttplug') {
+    if ('stroke' in config) {
+      config = {
+        ...config,
+        strokeRange: config.stroke,
+      };
+    }
+  }
+  return await device.updateConfig(config);
+}

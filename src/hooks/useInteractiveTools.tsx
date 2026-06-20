@@ -37,7 +37,12 @@ import {
 } from '../components/modifiers/pipeline';
 import { DB, DBSchema, IndexedDBWrapper } from '../utils/db';
 import { DefaultHandyClient } from '../utils/interactive/client';
-import { Funscript, HandyDevice, HapticDevice } from 'ive-connect';
+import {
+  ButtplugDevice,
+  Funscript,
+  HandyDevice,
+  HapticDevice,
+} from 'ive-connect';
 
 import { useInteractivePipelines } from './useInteractivePipelines';
 import { useInteractivePresets } from './useInteractivePresets';
@@ -112,6 +117,7 @@ const DEFAULT_SIT_PLUGIN_CONFIG: SITPluginConfig = {
   handleHandyFileTokens: true,
   hapticInterface: HapticInterface.HANDY_DEFAULT,
   disableHapticInterface: false,
+  hapticInterfaceUrl: 'ws://localhost:12345',
 };
 
 type HapticDeviceBuilder = (
@@ -132,7 +138,10 @@ const clientBuilders: Record<HapticInterface, HapticDeviceBuilder> = {
       applicationId: process.env.HANDY_APPLICATION_ID,
       connectionKey: i.handyKey,
     }),
-  [HapticInterface.HANDY_FW4_BLUETOOTH]: DEFAULT_CLIENT_BUILDER,
+  [HapticInterface.HANDY_FW4_BLUETOOTH]: (_, config) =>
+    new ButtplugDevice({
+      serverUrl: config.hapticInterfaceUrl,
+    }),
 };
 
 function getInteractiveDevice(
@@ -145,6 +154,7 @@ function getInteractiveDevice(
   const builder = clientBuilders[hapticInterface];
   if (device.current?.id !== hapticInterface) {
     device.current?.disconnect();
+    console.log('Connecting to', hapticInterface, config);
     return builder(interactive, config);
   }
   return device.current;

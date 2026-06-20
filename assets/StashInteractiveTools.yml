@@ -62,6 +62,9 @@ settings:
   remapReplaceZero:
     displayName: Change 0 to 1 for speed on funscripts so the map displays (Warning! Uses direct SQL - Backup!)
     type: BOOLEAN
+  hapticInterfaceUrl:
+    displayName: URL to use for the Haptic Interface
+    type: STRING
 tasks:
   - name: 'Install'
     description: Install all dependencies & Run migrations

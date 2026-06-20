@@ -47,6 +47,10 @@ const PluginSetting: React.FC<IPluginSettingProps> = ({
     subHeading: setting.description ?? undefined,
   };
 
+  if (setting.name === 'hapticInterfaceUrl' && !value) {
+    value = 'ws://localhost:12345';
+    onChange(value);
+  }
   if (dropdownOptions)
     return (
       <Setting

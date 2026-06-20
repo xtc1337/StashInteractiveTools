@@ -61,6 +61,7 @@ export type SITPluginConfig = {
   handleHandyFileTokens: boolean;
   hapticInterface: HapticInterface;
   disableHapticInterface: boolean;
+  hapticInterfaceUrl: string;
 };
 export type InteractiveState = MutableRefObject<{
   id: string;

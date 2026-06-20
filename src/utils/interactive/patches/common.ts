@@ -1,7 +1,29 @@
-import { HapticInterface, withPatcher } from '../types';
+import { HapticInterface, PatchContext, withPatcher } from '../types';
 import { getPlayerPosition } from '../utils';
 import { DeviceSettings, HandyDevice } from 'ive-connect';
+import { Any } from '../../../api';
 
+type AsyncFunction<T> = (...args: unknown[]) => Promise<T>;
+export async function tryError<T>(
+  ctx: PatchContext<Any>,
+  fn: AsyncFunction<T>,
+) {
+  const {
+    // logger,
+    state: {
+      current: { device },
+    },
+  } = ctx;
+  let error: Error | undefined;
+  const sink = (e: unknown) => {
+    error = new Error(e as string);
+  };
+  device.on('error', sink);
+  await fn();
+  device.off('error', sink);
+  if (error) throw error;
+  return;
+}
 export const connectPatcher = withPatcher('connect', (ctx) => {
   ctx.value(async function connect() {
     const {
@@ -12,7 +34,8 @@ export const connectPatcher = withPatcher('connect', (ctx) => {
     } = ctx;
 
     logger.debug('connecting....');
-    await device.connect(device.getConfig());
+    await tryError(ctx, () => device.connect(device.getConfig()));
+
     logger.debug('connected!');
   });
 });
