@@ -1,3 +1,9 @@
+## [1.2.0-alpha.9](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.8...v1.2.0-alpha.9) (2026-06-20)
+
+### Features
+
+* adding buttplug device builder ([efca5be](github.com/xtc1337/StashInteractiveTools/commit/efca5beb6e716e620ca83fc1f2f95a95062e76b1))
+
 ## [1.2.0-alpha.8](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.7...v1.2.0-alpha.8) (2026-05-12)
 
 ### Bug Fixes
