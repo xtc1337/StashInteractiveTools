@@ -1,3 +1,9 @@
+## [1.2.0-alpha.10](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.9...v1.2.0-alpha.10) (2026-08-06)
+
+### Bug Fixes
+
+* updated how plugin hooks into native render results ([f46e458](github.com/xtc1337/StashInteractiveTools/commit/f46e45818a4d215122d2b30ad7b372b4b41d5b49))
+
 ## [1.2.0-alpha.9](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.8...v1.2.0-alpha.9) (2026-06-20)
 
 ### Features
