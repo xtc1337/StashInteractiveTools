@@ -65,9 +65,58 @@ Two new peewee models in `assets/db.py`, added to the `create_tables` list in
 `ensure_db()`. No migration is required — `create_tables` runs with `safe=True`, and the
 `assets/migrations/` mechanism exists only for altering tables that already ship.
 
+### Enums
+
+`kind`, `mode` and `match_type` are closed sets, so they are enums rather than bare
+strings. They live in `assets/db.py` beside the models, which is the lowest point in the
+import graph that `manage.py` and `extract_metadata.py` both already reach through
+`Config`. `manage.py`'s existing `ManageAction(Enum)` is the precedent.
+
+```python
+class RuleKind(str, Enum):
+    METADATA = 'metadata'
+    CHANNEL  = 'channel'
+
+class FilterMode(str, Enum):
+    INCLUDE = 'include'
+    EXCLUDE = 'exclude'
+
+class MatchType(str, Enum):
+    EXACT = 'exact'
+    REGEX = 'regex'
+```
+
+The `str` mixin matters for two reasons: `json.dumps` serialises members directly, so
+`GET_TAG_RULES` needs no manual unwrapping; and comparisons against raw strings still hold,
+so nothing breaks if a value arrives unconverted from an older client.
+
+peewee has no native enum column, so a small field class handles the conversion and keeps
+the storage format a plain string:
+
+```python
+class EnumField(CharField):
+    def __init__(self, enum_cls, *args, **kwargs):
+        self.enum_cls = enum_cls
+        kwargs.setdefault('max_length', 32)
+        super().__init__(*args, **kwargs)
+
+    def db_value(self, value):
+        if value is None:
+            return None
+        return value.value if isinstance(value, Enum) else str(value)
+
+    def python_value(self, value):
+        return None if value is None else self.enum_cls(value)
+```
+
+Reads therefore hand back enum members, not strings, so evaluation code in
+`extract_metadata.py` branches on `RuleKind.METADATA` rather than a string literal.
+
+### Models
+
 ```python
 class TagRule(BaseModel):
-    kind         = CharField()                  # 'metadata' | 'channel'
+    kind         = EnumField(RuleKind)
     enabled      = BooleanField(default=True)
     sort_order   = IntegerField(default=0)
     field_name   = CharField(null=True)         # metadata only: key under `metadata`
@@ -78,8 +127,8 @@ class TagRule(BaseModel):
 
 class TagRuleFilter(BaseModel):
     rule       = ForeignKeyField(TagRule, backref='filters', on_delete='CASCADE')
-    mode       = CharField()   # 'include' | 'exclude'
-    match_type = CharField()   # 'exact' | 'regex'
+    mode       = EnumField(FilterMode)
+    match_type = EnumField(MatchType)
     pattern    = TextField()
 ```
 
@@ -114,8 +163,16 @@ list and commits it as a unit, and reorder and delete need no special handling.
 
 Neither payload carries a `scene_id`, so they do not subclass `BasePayload`.
 
+The payload dataclasses type their `kind`, `mode` and `match_type` fields as the enums
+above, which makes validation free: `bind_json` already coerces enum-typed fields
+(`assets/helpers.py:79-88`) and raises `JsonValidationError: expected one of ['include',
+'exclude'], got 'includes'` on anything unrecognised. No hand-written membership checks
+are needed in `manage.py`, and a malformed value is rejected at the boundary rather than
+reaching the database.
+
 `GET_TAG_RULES` returns camelCase keys, matching the convention `init.py`'s `for_json`
-already establishes (`truePath`, `isDefault`, `sortOrder`).
+already establishes (`truePath`, `isDefault`, `sortOrder`). Enum members serialise to
+their string values through the `str` mixin.
 
 ## Backend: application
 
@@ -246,8 +303,30 @@ switches on `is_array`, because it does two different jobs:
 </OverlayTrigger>
 ```
 
-**`types.ts`** — `TagRule`, `TagRuleFilter`, `RuleKind`, `MatchMode`, `MatchType`,
-`AutoCreate`.
+**`types.ts`** — the `TagRule` and `TagRuleFilter` interfaces, plus TypeScript `enum`s
+mirroring the Python ones member-for-member. The codebase already uses `enum` for wire
+values (`InteractiveBackendOperation`, `InteractiveBackendManageAction`,
+`HapticInterface`), so this follows the house style:
+
+```ts
+export enum RuleKind {
+  METADATA = 'metadata',
+  CHANNEL = 'channel',
+}
+export enum FilterMode {
+  INCLUDE = 'include',
+  EXCLUDE = 'exclude',
+}
+export enum MatchType {
+  EXACT = 'exact',
+  REGEX = 'regex',
+}
+```
+
+The string values are the contract between the two sides and must stay identical to the
+Python members. `auto_create` stays a nullable boolean rather than becoming an enum —
+`null` already means inherit, and the tri-state select maps onto `null | true | false`
+without a third name.
 
 ### Help text
 
@@ -278,6 +357,10 @@ channel rule has an empty `tag_name`, or any regex pattern fails to compile. The
 re-checks the same conditions and skips offending rules at run time, so a rule saved by an
 older UI cannot break a sweep.
 
+The enum fields need no UI validation of their own — they are rendered as selects, so an
+invalid value cannot be produced, and `bind_json` rejects one at the boundary if it ever
+is.
+
 ## Testing
 
 - **Rule evaluation** is the part worth testing directly: given a funscript dict and a
@@ -288,6 +371,10 @@ older UI cannot break a sweep.
 - **Persistence round-trip** — `SAVE_TAG_RULES` then `GET_TAG_RULES` returns an equivalent
   set, and a save replacing a larger set with a smaller one leaves no orphaned
   `TagRuleFilter` rows behind.
+- **Enum handling** — `EnumField` stores the string value and reads back a member; an
+  unrecognised `kind`, `mode` or `match_type` in a save payload raises
+  `JsonValidationError` rather than persisting. A cheap assertion that the TypeScript enum
+  values match the Python ones guards the wire contract from drifting.
 - **Frontend** — `MatchFilterList` regex validation, and that Save is blocked on each
   invalid-rule condition.
 
@@ -299,6 +386,7 @@ from Settings → Tasks.
 | Decision              | Choice                                   | Reason                                                           |
 | --------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
 | Storage               | SQLite via peewee, new tables            | Server-owned, structured, room for per-rule state later          |
+| Closed-set columns    | Enums both sides, via `EnumField`        | Free validation in `bind_json`; no string literals in branches   |
 | Persistence transport | New `manage.py` actions                  | Reuses the existing action-dispatch and payload-binding plumbing |
 | Application           | Separate `extract_metadata` task         | Keeps accepting rules and applying them independent              |
 | Save granularity      | Replace-all                              | Small set; makes reorder and delete trivial                      |
