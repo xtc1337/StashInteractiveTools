@@ -9,6 +9,7 @@ import { InteractiveToolsTab } from './components';
 import { Nav, Tab } from 'react-bootstrap';
 import { patch } from './api';
 import {
+  appendToNativeResult,
   createDebugConsole,
   deepSnakeCase,
   DEFAULT_NAMESPACE,
@@ -32,43 +33,41 @@ const logger = createDebugConsole('index');
 patch.after(
   'ScenePage.Tabs',
   (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
-    if (!enableInteractiveTools(props.scene)) {
-      return props.children;
-    }
     logger.info('ScenePage.Tabs:', {
       children: props.children,
       args,
     });
-    return [
-      props.children,
 
-      <Nav.Item>
-        <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
-      </Nav.Item>,
-    ];
+    return appendToNativeResult(
+      args,
+      enableInteractiveTools(props.scene) ? (
+        <Nav.Item>
+          <Nav.Link eventKey="scene-interactive-panel">Interactive</Nav.Link>
+        </Nav.Item>
+      ) : undefined,
+    );
   },
 );
 
 patch.after(
   'ScenePage.TabContent',
   (props: PropsWithChildren<SceneFileInfoPanelProps>, ...args) => {
-    if (!enableInteractiveTools(props.scene)) {
-      return props.children;
-    }
     logger.info('ScenePage.TabContent', {
       children: props.children,
       args,
     });
 
-    return [
-      props.children,
-      <Tab.Pane
-        eventKey="scene-interactive-panel"
-        className="stash-interactive-tools-tab"
-      >
-        <InteractiveToolsTab scene={props.scene} />
-      </Tab.Pane>,
-    ];
+    return appendToNativeResult(
+      args,
+      enableInteractiveTools(props.scene) ? (
+        <Tab.Pane
+          eventKey="scene-interactive-panel"
+          className="stash-interactive-tools-tab"
+        >
+          <InteractiveToolsTab scene={props.scene} />
+        </Tab.Pane>
+      ) : undefined,
+    );
   },
 );
 
@@ -81,15 +80,12 @@ patch.instead(
 );
 
 patch.after('MainNavBar.UtilityItems', (props, ...args) => {
-  logger.info('MainNavBar.UtilityItems', {
-    props,
-    args,
-  });
+  // const result = args[args.length - 1];
 
-  return [
-    ...args.filter((c) => c && '$$typeof' in c),
-    <UtilityItems {...props} />,
-  ];
+  return appendToNativeResult(
+    args,
+    <UtilityItems key={`${DEFAULT_NAMESPACE}-utility-items`} {...props} />,
+  );
 });
 
 const interceptLink = new ApolloLink((operation, forward) => {

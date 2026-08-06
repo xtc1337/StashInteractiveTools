@@ -139,5 +139,3 @@ export function addSITEventListener<E extends SITEvent>(
     CALLBACKS[event][id] = callback;
   });
 }
-
-
