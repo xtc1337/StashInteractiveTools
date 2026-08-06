@@ -131,4 +131,5 @@ dist
 .idea/
 assets/payload.json
 .idea
+ docs/*
 

@@ -21,12 +21,12 @@ If you run into any issues, you can reach out on https://discuss.eroscripts.com/
 
 # Multi Funscripts
 
-![img.png](docs/settings.png)
+![img.png](images/settings.png)
 The plugin allows to tag all scripts that are found to have multiple tags. To do this go to the plugins
 settings and set the tag name you would like to use, the default tag is set to `[SIT: Multi-Script]`
 
 Once set go to the `Tasks` screen and press the `tag` tasks
-![img.png](docs/tag.png)
+![img.png](images/tag.png)
 
 Currently, the matching logic is very simple, later support will be added to customize.
 The logic states:
@@ -38,7 +38,7 @@ The logic states:
 - Strip the prefix and remove `()`
   - ie: `Izzy Green 02 - Puerto Rico Creampie Sextape (Less Intense Filler).funscript` and `Izzy Green 02 - Puerto Rico Creampie Sextape (More Intense Filler).funscript`
     Will output `Less Intense Filler` and `More Intense Filler` in the ui
-    ![img.png](docs/multi.png)
+    ![img.png](images/multi.png)
 
 # IVDB.io Support
 
