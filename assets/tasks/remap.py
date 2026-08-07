@@ -13,6 +13,8 @@ import hashlib
 from datetime import timedelta
 from PIL import Image, ImageDraw, ImageFont
 from typing import Dict, Any
+from pathlib import Path
+from tempfile import gettempdir
 
 import time
 config:'Config'
@@ -346,7 +348,7 @@ def remap_scene(scene, funscripts, genpath, remapconfig):
 
    for funscript in funscripts_sorted:
        funcount += 1
-       heatmap = f"/tmp/{funcount}-{scenehash}.png"
+       heatmap = str(Path(gettempdir()) / f"{funcount}-{scenehash}.png")
 
        if os.path.isfile(funscript):
           try:
