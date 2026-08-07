@@ -141,8 +141,10 @@ export function appendToNativeResult(
 ) {
   const normalizedExtraChildren = React.Children.toArray(extraChildren);
 
-  if (Array.isArray(result) && result.length > 1) {
-    return [...result, ...normalizedExtraChildren];
+  if (Array.isArray(result)) {
+    return [...result, ...normalizedExtraChildren].filter(
+      React.isValidElement,
+    ) as ReactNode[];
   }
 
   if (React.isValidElement<{ children?: ReactNode }>(result)) {
