@@ -1,3 +1,9 @@
+## [1.2.0-alpha.12](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.11...v1.2.0-alpha.12) (2026-08-07)
+
+### Bug Fixes
+
+* fixed remap script for windows ([37724a5](github.com/xtc1337/StashInteractiveTools/commit/37724a5eea81bc5cdc0f1b4a70c0b1ca9f4e4999))
+
 ## [1.2.0-alpha.11](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.10...v1.2.0-alpha.11) (2026-08-07)
 
 ### Bug Fixes
