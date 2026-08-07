@@ -1,3 +1,9 @@
+## [1.2.0-alpha.11](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.10...v1.2.0-alpha.11) (2026-08-07)
+
+### Bug Fixes
+
+* fixed crashing bug ([185c33a](github.com/xtc1337/StashInteractiveTools/commit/185c33ae2e1f5380e26304700a6255739db96c6b))
+
 ## [1.2.0-alpha.10](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.9...v1.2.0-alpha.10) (2026-08-06)
 
 ### Bug Fixes
