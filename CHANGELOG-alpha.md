@@ -1,3 +1,9 @@
+## [1.2.0-alpha.13](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.12...v1.2.0-alpha.13) (2026-10-05)
+
+### Bug Fixes
+
+* dep install logic ([faa7732](github.com/xtc1337/StashInteractiveTools/commit/faa7732ec4480d97363deabe0af85a03c95e6d73))
+
 ## [1.2.0-alpha.12](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.11...v1.2.0-alpha.12) (2026-08-07)
 
 ### Bug Fixes

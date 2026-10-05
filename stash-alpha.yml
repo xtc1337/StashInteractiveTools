@@ -2,7 +2,7 @@
   name: Stash Interactive Tools (alpha)
   metadata:
     description: Enhance your Stash Interactive experience
-  version: 1.2.0-alpha.12
-  date: 2026-08-07 16:12:18
-  path: https://github.com/xtc1337/StashInteractiveTools/releases/download/v1.2.0-alpha.12/StashInteractiveTools-1.2.0-alpha.12.zip
-  sha256: bd9c2a4e0a1f467d16873f0f5ce256bd3c59e98d2b2992b9fccba610fb6b31bb
+  version: 1.2.0-alpha.13
+  date: 2026-10-05 14:35:29
+  path: https://github.com/xtc1337/StashInteractiveTools/releases/download/v1.2.0-alpha.13/StashInteractiveTools-1.2.0-alpha.13.zip
+  sha256: 3c791bfd2182405365d096f49f0edab7b711b37e315392bb82bda83ac4ed12f8
