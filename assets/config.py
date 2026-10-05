@@ -6,6 +6,7 @@ import os.path
 import sys
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from stashapi.stashapp import StashInterface
     import stashapi.log as stash_log
@@ -55,7 +56,8 @@ class Config:
 
     SUITE_DIR = Path(__file__).parent.parent
 
-
+    def __init__(self, log):
+        self.log = log
     @staticmethod
     def ensure_db():
         mod = importlib.import_module('db')
@@ -99,7 +101,7 @@ def get_stash_client():
         from stashapi.stashapp import StashInterface
     except (ImportError, ModuleNotFoundError) as e:
         from tasks.install import run
-        run()
+        run(config)
     import stashapi.log as log
     from stashapi.stashapp import StashInterface
     stash = StashInterface(config.FRAGMENT['server_connection'])
@@ -108,10 +110,11 @@ def get_stash_client():
     return stash
 
 
-def get_config():
+def get_config(log):
     global config
 
-    config = Config()
+    config = Config(log)
+
 
     if DEBUG:
         handle = open(config.PAYLOAD_FILE)

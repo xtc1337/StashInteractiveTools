@@ -3,6 +3,7 @@ import traceback
 from pathlib import Path
 
 from config import get_config
+import stash_log
 
 
 current_path = Path(__file__).resolve()
@@ -12,7 +13,7 @@ sys.path.insert(0, str(current_path.parent/"tasks"/"migrations"))
 sys.path.insert(0, str(current_path.parent/"automatic_dependencies"))
 
 def main():
-    config = get_config()
+    config = get_config(stash_log)
     config.log.debug(f"Running task paths:'{current_path.parent}'")
 
     try:

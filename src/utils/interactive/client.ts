@@ -3,6 +3,7 @@ import {
   DeviceInfo,
   DeviceScriptLoadResult,
   DeviceSettings,
+  EventEmitter,
   Funscript,
   HandyDeviceInfo,
   HandySettings,
@@ -41,7 +42,7 @@ export interface DefaultDeviceSettings extends DeviceSettings {
   };
 }
 
-export class DefaultHandyClient implements HapticDevice {
+export class DefaultHandyClient extends EventEmitter implements HapticDevice {
   readonly id: string = 'default';
   readonly name: string = 'Default';
   readonly type: string = 'handy';
@@ -56,6 +57,7 @@ export class DefaultHandyClient implements HapticDevice {
     DeviceCapability.STROKE,
   ];
   constructor(handy: Handy, handyKey: string = '', scriptOffset: number = 0) {
+    super();
     this._handy = handy;
     this._handy.verbose = true;
 
@@ -77,12 +79,14 @@ export class DefaultHandyClient implements HapticDevice {
     this._handy.connectionKey = this._config.connectionKey;
     const connected = await this._handy.getConnected();
     if (!connected) {
-      throw new Error('Handy not connected');
+      this.emit('error', 'Handy not connected');
+      return false;
     }
     const info = await this._handy.getInfo();
     console.log('info', info);
     if (info.fwStatus === HandyFirmwareStatus.updateRequired) {
-      throw new Error('Handy firmware update required');
+      this.emit('error', 'Handy firmware update required');
+      return false;
     }
     const offset = await this._handy.getHstpOffset();
     const slideInfo = await this._handy.getSlideSettings();
@@ -134,7 +138,7 @@ export class DefaultHandyClient implements HapticDevice {
     return true;
   }
   async prepareScript(_funscript: Funscript): Promise<DeviceScriptLoadResult> {
-    throw new Error('Method not implemented.');
+    throw new Error('Method(prepareScript) not implemented.');
   }
   async loadScript(
     scriptData: ScriptData,
@@ -188,13 +192,7 @@ export class DefaultHandyClient implements HapticDevice {
     return this._handy.getServerTimeOffset();
   }
   getDeviceInfo(): DeviceInfo | null {
-    throw new Error('Method not implemented.');
-  }
-  on(_event: string, _callback: (data: Any) => void): void {
-    throw new Error('Method not implemented.');
-  }
-  off(_event: string, _callback: (data: Any) => void): void {
-    throw new Error('Method not implemented.');
+    throw new Error('Method(getDeviceInfo) not implemented.');
   }
 }
 
