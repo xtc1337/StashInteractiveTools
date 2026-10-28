@@ -1,24 +1,55 @@
 name: Release
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Channel to release (next promotes alpha, main promotes next)"
+        required: true
+        type: choice
+        options:
+          - alpha
+          - next
+          - main
 
 permissions:
   contents: read # for checkout
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
-    name: Release
+    name: Release ${{ inputs.target }}
     runs-on: ubuntu-latest
     permissions:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
       pull-requests: write # to be able to comment on released pull requests
       id-token: write # to enable use of OIDC for npm provenance
+    env:
+      TARGET: ${{ inputs.target }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.target }}
           fetch-depth: 0
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      # Promotions are always merge commits (never squash) so the source branch
+      # stays an ancestor of the target and conventional commits stay visible.
+      - name: Promote
+        if: inputs.target != 'alpha'
+        run: |
+          case "$TARGET" in
+            next) SOURCE=alpha ;;
+            main) SOURCE=next ;;
+          esac
+          git merge --no-ff "origin/$SOURCE" -m "chore: promote $SOURCE to $TARGET"
+          git push origin "HEAD:$TARGET"
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,3 +63,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+      # After a stable release, merge main back down so next/alpha can see the
+      # new tag and keep versioning above it.
+      - name: Back-merge main
+        if: inputs.target == 'main'
+        run: |
+          git fetch origin
+          for BRANCH in next alpha; do
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git merge --no-ff origin/main -m "chore: back-merge main into $BRANCH"
+            git push origin "$BRANCH"
+          done
