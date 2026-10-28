@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import strip from '@rollup/plugin-strip';
 import semanticRelease from 'semantic-release';
+import releaseConfig from './release.config.cjs';
 import replace from '@rollup/plugin-replace';
 import YAML from 'yaml';
 import debug from 'debug';
@@ -50,25 +51,12 @@ function updateMetadataVersionPlugin() {
             debug: true,
             dryRun: true,
 
-            branches: [
-              { name: 'main' },
-              { name: 'next', prerelease: true },
-              { name: 'alpha', prerelease: true },
-            ],
-            plugins: [
-              [
-                '@semantic-release/commit-analyzer',
-                {
-                  preset: 'conventionalcommits',
-                  releaseRules: [
-                    { type: 'build', release: 'patch' },
-                    { type: 'docs', scope: 'README', release: 'patch' },
-                    { type: 'refactor', release: 'patch' },
-                    { type: 'style', release: 'patch' },
-                  ],
-                },
-              ],
-            ],
+            // share branches and release rules with release.config.cjs so the
+            // stamped version always matches what semantic-release publishes
+            branches: releaseConfig.branches,
+            plugins: releaseConfig.plugins.filter(
+              ([name]) => name === '@semantic-release/commit-analyzer',
+            ),
           },
           {
             stdout: process.stdout,
