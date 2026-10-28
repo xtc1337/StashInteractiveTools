@@ -1,3 +1,5 @@
+## [1.2.0-alpha.14](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.13...v1.2.0-alpha.14) (2026-10-28)
+
 ## [1.2.0-alpha.13](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.12...v1.2.0-alpha.13) (2026-10-05)
 
 ### Bug Fixes
