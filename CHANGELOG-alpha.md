@@ -1,3 +1,9 @@
+## [1.2.0-alpha.15](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.14...v1.2.0-alpha.15) (2026-10-28)
+
+### Bug Fixes
+
+* **build:** share release rules with the version-stamping dry run ([a97602e](github.com/xtc1337/StashInteractiveTools/commit/a97602e53256a93fb0a95c3fe296cbd7c1af3659))
+
 ## [1.2.0-alpha.14](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.13...v1.2.0-alpha.14) (2026-10-28)
 
 ## [1.2.0-alpha.13](github.com/xtc1337/StashInteractiveTools/compare/v1.2.0-alpha.12...v1.2.0-alpha.13) (2026-10-05)
