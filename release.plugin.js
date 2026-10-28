@@ -61,7 +61,7 @@ function wrapPlugin(name) {
       logger.info(`invoking ${name}->${methodName} method`);
       config = {
         ...config,
-        ...CONFIGS[methodName]?.common,
+        ...CONFIGS[name]?.common,
         ...branchConfig,
       };
       await defaultMethod.apply(plugin, [config, context]);
