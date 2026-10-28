@@ -10,6 +10,16 @@ on:
           - alpha
           - next
           - main
+      force:
+        description: "Force a release even if no commits call for one"
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: read # for checkout
@@ -50,6 +60,12 @@ jobs:
           esac
           git merge --no-ff "origin/$SOURCE" -m "chore: promote $SOURCE to $TARGET"
           git push origin "HEAD:$TARGET"
+      # semantic-release has no force flag; an empty `release(<bump>)` commit is
+      # picked up by the matching releaseRules in release.config.cjs. It is only
+      # pushed if semantic-release publishes.
+      - name: Force release
+        if: inputs.force != 'none'
+        run: git commit --allow-empty -m "release(${{ inputs.force }}): forced ${{ inputs.force }} release"
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

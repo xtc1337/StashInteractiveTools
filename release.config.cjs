@@ -18,6 +18,10 @@ module.exports = {
           { type: 'docs', scope: 'README', release: 'patch' },
           { type: 'refactor', release: 'patch' },
           { type: 'style', release: 'patch' },
+          // forced releases from the release workflow
+          { type: 'release', scope: 'patch', release: 'patch' },
+          { type: 'release', scope: 'minor', release: 'minor' },
+          { type: 'release', scope: 'major', release: 'major' },
         ],
       },
     ],
